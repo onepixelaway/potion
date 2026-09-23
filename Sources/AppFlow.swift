@@ -5,8 +5,6 @@ import SwiftUI
     enum Stage { case welcome, signIn, ready }
 
     @Published private(set) var stage: Stage
-    /// After signing out, the one window that stays open for signing back in. The rest close.
-    private(set) weak var keeperWindow: NSWindow?
     private let windows = NSHashTable<NSWindow>.weakObjects()
     private let defaults: UserDefaults
     private static let completedKey = "potion.onboardingCompleted"
@@ -50,8 +48,11 @@ import SwiftUI
             signOut()
         }
     }
+    /// Keeps one window open for signing back in and closes the rest.
     func didSignOut(keeping window: NSWindow?) {
-        keeperWindow = window
+        if let window {
+            for other in windows.allObjects where other !== window { other.close() }
+        }
         defaults.set(false, forKey: Self.completedKey)
         go(to: .signIn)
     }

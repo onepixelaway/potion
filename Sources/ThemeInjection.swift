@@ -65,14 +65,15 @@ enum ThemeInjection {
         \(putStyle)
           const apply = () => {
             if (!document.documentElement) return;
-            if (window.__potionFonts) put('potion-fonts', window.__potionFonts);
+            // The fonts never change, so they're added once rather than compared on every apply.
+            if (window.__potionFonts && !document.getElementById('potion-fonts')) put('potion-fonts', window.__potionFonts);
             put('potion-theme', css);
           };
           window.__potionApply = apply;
           apply();
           if (!window.__potionObserver) {
             window.__potionObserver = new MutationObserver(() => {
-              if (!document.getElementById('potion-theme') || !document.getElementById('potion-fonts')) window.__potionApply();
+              if (!document.getElementById('potion-theme') || (window.__potionFonts && !document.getElementById('potion-fonts'))) window.__potionApply();
             });
             window.__potionObserver.observe(document.documentElement, {childList: true, subtree: true});
           }
@@ -139,7 +140,7 @@ extension ThemeInjection {
         put('potion-layout', window.__potionLayout ? layoutCSS : '');
       };
       const inboxCount = () => {
-        const button = document.querySelector('.notion-sidebar [role=button][aria-label="Inbox"]');
+        const button = document.querySelector(\(jsLiteral(sidebarButton("Inbox"))));
         const badge = button?.parentElement?.parentElement?.innerText.replace(/\\D/g, '') || '0';
         return parseInt(badge, 10) || 0;
       };
@@ -173,9 +174,9 @@ extension ThemeInjection {
 
     /// Presses one of the buttons in Notion's sidebar row, which stay in the page while the sidebar is collapsed.
     static func pressSidebarButton(_ label: String) -> String {
-        let selector = ".notion-sidebar [role=button][aria-label=\"\(label)\"]"
-        return "document.querySelector(\(jsLiteral(selector)))?.click();"
+        "document.querySelector(\(jsLiteral(sidebarButton(label))))?.click();"
     }
+    private static func sidebarButton(_ label: String) -> String { ".notion-sidebar [role=button][aria-label=\"\(label)\"]" }
 
     /// Sends Notion the same key event as its ⌘\ shortcut, which shows or hides its sidebar.
     static let toggleSidebarScript = """
@@ -200,14 +201,14 @@ enum NavigationPolicy {
     /// Hosts of the Notion app itself, as opposed to notion.com's marketing and help pages or published notion.site pages.
     private static func isAppHost(_ host: String) -> Bool { host == "app.notion.com" || host == "notion.so" || host.hasSuffix(".notion.so") }
 
+    private static func httpsHost(_ url: URL) -> String? { url.scheme == "https" ? url.host?.lowercased() : nil }
+    private static func firstPathComponent(_ url: URL) -> String { url.pathComponents.dropFirst().first?.lowercased() ?? "" }
+
     static func isNotion(_ url: URL) -> Bool {
-        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
+        guard let host = httpsHost(url) else { return false }
         return notionDomains.contains { host == $0 || host.hasSuffix("." + $0) }
     }
-    static func isAuthentication(_ url: URL) -> Bool {
-        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
-        return authenticationHosts.contains(host)
-    }
+    static func isAuthentication(_ url: URL) -> Bool { httpsHost(url).map(authenticationHosts.contains) ?? false }
     /// A Notion page title without the “| Notion” suffix, for window tabs.
     static func pageTitle(_ title: String) -> String {
         var result = title.trimmingCharacters(in: .whitespaces)
@@ -226,13 +227,13 @@ enum NavigationPolicy {
 
     /// True for pages of a signed-in workspace, which is how Potion knows sign-in has finished.
     static func isWorkspacePage(_ url: URL) -> Bool {
-        guard isNotion(url), let host = url.host?.lowercased(), isAppHost(host) else { return false }
-        let first = url.pathComponents.dropFirst().first?.lowercased() ?? ""
+        guard isNotion(url), let host = httpsHost(url), isAppHost(host) else { return false }
+        let first = firstPathComponent(url)
         return !signInPaths.contains(first) && !first.contains("popup") && !first.contains("callback")
     }
     /// Workspace pages worth reopening later. Notion's `/note/…` addresses are short-lived and can't be reopened.
     static func isRestorable(_ url: URL) -> Bool {
-        isWorkspacePage(url) && url.pathComponents.dropFirst().first?.lowercased() != "note"
+        isWorkspacePage(url) && firstPathComponent(url) != "note"
     }
     /// Notion opens OAuth sign-in through a sized popup on its own domain, which must stay a real window.
     static func isSignInPopup(_ url: URL, hasWindowSize: Bool) -> Bool {

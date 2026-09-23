@@ -25,10 +25,13 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         .init(id: "mono", name: "Studio", subtitle: "Less noise. More clarity.", headingFont: "Space Grotesk", bodyFont: "Manrope", background: "F5F5F3", surface: "E8E8E5", text: "303330", accent: "56665F")
     ]
 
+    /// The theme Potion starts with, and falls back to.
+    static var standard: PotionTheme { presets[0] }
     static let fontSizeRange: ClosedRange<Double> = 13...22
     static let lineHeightRange: ClosedRange<Double> = 1.3...2
 
     var isDark: Bool { NSColor(hex: background).brightnessComponent < 0.45 }
+    var hasName: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     /// A new custom theme mixed from this one.
     func customCopy() -> PotionTheme {
         var copy = self
@@ -39,7 +42,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     }
     var validated: PotionTheme {
         var copy = self
-        let fallback = Self.presets[0]
+        let fallback = Self.standard
         for key in [\PotionTheme.background, \.surface, \.text, \.accent] {
             copy[keyPath: key] = Self.cleanHex(copy[keyPath: key]) ?? fallback[keyPath: key]
         }
@@ -61,16 +64,18 @@ struct PotionTheme: Codable, Identifiable, Equatable {
 @MainActor final class ThemeStore: ObservableObject {
     @Published var selected: PotionTheme { didSet { persist() } }
     @Published var customs: [PotionTheme] { didSet { persist() } }
-    @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "themeEnabled") } }
+    @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: Self.enabledKey) } }
     private let defaults: UserDefaults
+    private static let archiveKey = "potion.themes.v1"
+    private static let enabledKey = "themeEnabled"
     private struct Archive: Codable { var selected: PotionTheme; var customs: [PotionTheme] }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        let archive = defaults.data(forKey: "potion.themes.v1").flatMap { try? JSONDecoder().decode(Archive.self, from: $0) }
-        selected = archive?.selected.validated ?? PotionTheme.presets[0]
+        let archive = defaults.data(forKey: Self.archiveKey).flatMap { try? JSONDecoder().decode(Archive.self, from: $0) }
+        selected = archive?.selected.validated ?? .standard
         customs = archive?.customs.map(\.validated) ?? []
-        enabled = defaults.object(forKey: "themeEnabled") as? Bool ?? true
+        enabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
     }
     /// Selection identifier for Notion's own styling, which sits alongside the themes in pickers.
     static let originalID = "original"
@@ -78,6 +83,8 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     /// Every theme a picker offers, Notion's own styling first.
     var choices: [PotionTheme] { [PotionTheme.original] + all }
     var activeID: String { enabled ? selected.id : Self.originalID }
+    /// The theme restyling Notion, or nil for Notion's own look.
+    var active: PotionTheme? { enabled ? selected : nil }
     func activate(_ id: String) {
         if id == Self.originalID { enabled = false }
         else if let theme = all.first(where: { $0.id == id }) { select(theme) }
@@ -87,18 +94,18 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         var saved = theme.validated
         if !saved.isCustom { saved.id = UUID().uuidString }
         saved.isCustom = true
-        if saved.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { saved.name = "My theme" }
+        if !saved.hasName { saved.name = "My theme" }
         if let index = customs.firstIndex(where: { $0.id == saved.id }) { customs[index] = saved }
         else { customs.append(saved) }
         select(saved)
     }
     func delete(_ theme: PotionTheme) {
         customs.removeAll { $0.id == theme.id }
-        if selected.id == theme.id { selected = PotionTheme.presets[0] }
+        if selected.id == theme.id { selected = .standard }
     }
     private func persist() {
         guard let data = try? JSONEncoder().encode(Archive(selected: selected, customs: customs)) else { return }
-        defaults.set(data, forKey: "potion.themes.v1")
+        defaults.set(data, forKey: Self.archiveKey)
     }
 }
 

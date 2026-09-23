@@ -1,6 +1,9 @@
 import AppKit
 let root = URL(fileURLWithPath: CommandLine.arguments[1])
 try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+let cream = NSColor(calibratedRed: 0.96, green: 0.95, blue: 0.86, alpha: 1)
+/// Point sizes in the icon set; each is written at 1x and, from half its pixel size, at 2x.
+let pointSizes = [16, 32, 128, 256, 512]
 for size in [16, 32, 64, 128, 256, 512, 1024] {
     let image = NSImage(size: NSSize(width: size, height: size))
     image.lockFocus()
@@ -18,26 +21,19 @@ for size in [16, 32, 64, 128, 256, 512, 1024] {
     flask.curve(to: NSPoint(x: 285, y: 350), controlPoint1: NSPoint(x: 311, y: 264), controlPoint2: NSPoint(x: 285, y: 291))
     flask.curve(to: NSPoint(x: 420, y: 585), controlPoint1: NSPoint(x: 285, y: 428), controlPoint2: NSPoint(x: 420, y: 545))
     flask.close()
-    NSColor(calibratedRed: 0.96, green: 0.95, blue: 0.86, alpha: 1).setFill(); flask.fill()
+    cream.setFill(); flask.fill()
     let liquid = NSBezierPath(); liquid.move(to: NSPoint(x: 375, y: 432))
     liquid.curve(to: NSPoint(x: 649, y: 432), controlPoint1: NSPoint(x: 480, y: 386), controlPoint2: NSPoint(x: 552, y: 478))
     liquid.curve(to: NSPoint(x: 650, y: 330), controlPoint1: NSPoint(x: 700, y: 356), controlPoint2: NSPoint(x: 684, y: 330))
     liquid.line(to: NSPoint(x: 374, y: 330)); liquid.curve(to: NSPoint(x: 375, y: 432), controlPoint1: NSPoint(x: 340, y: 330), controlPoint2: NSPoint(x: 324, y: 356)); liquid.close()
     NSColor(calibratedRed: 0.58, green: 0.65, blue: 0.43, alpha: 1).setFill(); liquid.fill()
-    NSColor(calibratedRed: 0.96, green: 0.95, blue: 0.86, alpha: 1).setFill()
+    cream.setFill()
     NSBezierPath(roundedRect: NSRect(x: 397, y: 730, width: 230, height: 49), xRadius: 18, yRadius: 18).fill()
     let sparkle = NSBezierPath(); sparkle.move(to: NSPoint(x: 738, y: 745)); sparkle.line(to: NSPoint(x: 756, y: 697)); sparkle.line(to: NSPoint(x: 804, y: 679)); sparkle.line(to: NSPoint(x: 756, y: 661)); sparkle.line(to: NSPoint(x: 738, y: 613)); sparkle.line(to: NSPoint(x: 720, y: 661)); sparkle.line(to: NSPoint(x: 672, y: 679)); sparkle.line(to: NSPoint(x: 720, y: 697)); sparkle.close(); sparkle.fill()
     image.unlockFocus()
     let data = NSBitmapImageRep(data: image.tiffRepresentation!)!.representation(using: .png, properties: [:])!
-    let names: [String]
-    switch size {
-    case 16: names = ["icon_16x16.png"]
-    case 32: names = ["icon_16x16@2x.png", "icon_32x32.png"]
-    case 64: names = ["icon_32x32@2x.png"]
-    case 128: names = ["icon_128x128.png"]
-    case 256: names = ["icon_128x128@2x.png", "icon_256x256.png"]
-    case 512: names = ["icon_256x256@2x.png", "icon_512x512.png"]
-    default: names = ["icon_512x512@2x.png"]
+    let names = [size / 2, size].filter(pointSizes.contains).map { points in
+        "icon_\(points)x\(points)\(points == size ? "" : "@2x").png"
     }
     for name in names { try data.write(to: root.appendingPathComponent(name)) }
 }

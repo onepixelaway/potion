@@ -13,7 +13,7 @@ struct ThemeStyling: Equatable {
     @Published private(set) var tabs: [Workspace]
     @Published private(set) var current: Workspace
     weak var window: NSWindow?
-    private var styling = ThemeStyling(theme: PotionTheme.presets[0], enabled: false)
+    private var styling = ThemeStyling(theme: .standard, enabled: false)
     /// Notion's Mac-app layout, on once the person is in their workspace.
     var usesWindowLayout = false { didSet { tabs.forEach { $0.usesWindowLayout = usesWindowLayout } } }
     /// The last snapshot this window saved, so unchanged tabs don't overwrite another window's.
@@ -83,7 +83,7 @@ struct ThemeStyling: Equatable {
               !snapshot.urls.isEmpty else { current.open(); return }
         current.open(snapshot.urls[0])
         for url in snapshot.urls.dropFirst() { newTab(url, select: false) }
-        select(tabs[min(max(snapshot.selected, 0), tabs.count - 1)])
+        select(tabs[snapshot.selected.clamped(to: 0...(tabs.count - 1))])
     }
 
     private func configure(_ tab: Workspace) {

@@ -32,10 +32,12 @@ struct AuthPopup: Identifiable {
         didSet {
             guard usesWindowLayout != oldValue else { return }
             installScripts()
-            webView.evaluateJavaScript(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeRefresh, completionHandler: nil)
+            run(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeRefresh)
         }
     }
     private var themeScript: String?
+    /// Whether the installed theme restyles pages, and so needs the bundled fonts.
+    private var themeEnabled = false
     /// The current workspace page, restored per window and tab on relaunch.
     @Published private(set) var pageURL: URL? { didSet { onPageChange?() } }
     /// Called after `pageURL` changes. Set by the window hosting this workspace.
@@ -73,9 +75,12 @@ struct AuthPopup: Identifiable {
     func apply(_ theme: PotionTheme, enabled: Bool) {
         let script = ThemeInjection.script(theme: theme, enabled: enabled)
         guard script != themeScript else { return }
+        // Pages loaded while theming was off have no fonts yet, so they come along when it turns on.
+        let fonts = enabled && !themeEnabled ? ThemeInjection.fontScript + "\n" : ""
         themeScript = script
+        themeEnabled = enabled
         installScripts()
-        webView.evaluateJavaScript(script + ThemeInjection.chromeRefresh, completionHandler: nil)
+        run(fonts + script + ThemeInjection.chromeRefresh)
     }
     private func installScripts() {
         let controller = webView.configuration.userContentController
@@ -83,18 +88,20 @@ struct AuthPopup: Identifiable {
         controller.addUserScript(WKUserScript(source: ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript,
                                               injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         if let themeScript {
-            controller.addUserScript(WKUserScript(source: ThemeInjection.fontScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+            // The fonts are large, so pages load them only while a theme is on.
+            if themeEnabled {
+                controller.addUserScript(WKUserScript(source: ThemeInjection.fontScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+            }
             controller.addUserScript(WKUserScript(source: themeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         }
     }
+    private func run(_ script: String) { webView.evaluateJavaScript(script, completionHandler: nil) }
     /// Shows or hides Notion's own sidebar, as its ⌘\ shortcut does.
-    func toggleSidebar() {
-        webView.evaluateJavaScript(ThemeInjection.toggleSidebarScript, completionHandler: nil)
-    }
+    func toggleSidebar() { run(ThemeInjection.toggleSidebarScript) }
     /// Opens Notion's inbox, as its sidebar button does.
-    func openInbox() { webView.evaluateJavaScript(ThemeInjection.pressSidebarButton("Inbox"), completionHandler: nil) }
+    func openInbox() { run(ThemeInjection.pressSidebarButton("Inbox")) }
     /// Starts a new Notion page, as its sidebar button does.
-    func newPage() { webView.evaluateJavaScript(ThemeInjection.pressSidebarButton("New page"), completionHandler: nil) }
+    func newPage() { run(ThemeInjection.pressSidebarButton("New page")) }
     var displayTitle: String { NavigationPolicy.pageTitle(title) }
 
     /// Loads the offline sample page.
@@ -143,11 +150,11 @@ struct AuthPopup: Identifiable {
         webViewDidClose(popup)
     }
 
+    /// Only changed values are assigned, so a progress tick doesn't redraw everything observing the workspace.
+    private func update<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<Workspace, Value>, _ value: Value) {
+        if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
+    }
     private func updateState() {
-        // Only changed values are assigned, so a progress tick doesn't redraw everything observing the workspace.
-        func update<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<Workspace, Value>, _ value: Value) {
-            if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
-        }
         update(\.isLoading, webView.isLoading)
         update(\.progress, webView.estimatedProgress)
         update(\.canGoBack, webView.canGoBack)
@@ -160,7 +167,7 @@ struct AuthPopup: Identifiable {
             pageURL = safeURL
             UserDefaults.standard.set(safeURL, forKey: Self.lastURLKey)
         }
-        if NavigationPolicy.isNotion(url), signedIn != isSignedIn { isSignedIn = signedIn }
+        if NavigationPolicy.isNotion(url) { update(\.isSignedIn, signedIn) }
     }
 
     // MARK: Page chrome
@@ -168,10 +175,8 @@ struct AuthPopup: Identifiable {
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame, let url = message.frameInfo.request.url, NavigationPolicy.isNotion(url),
               let body = message.body as? [String: Any], let width = body["sidebarWidth"] as? NSNumber else { return }
-        let next = CGFloat(width.doubleValue)
-        if next != sidebarWidth { sidebarWidth = next }
-        let count = (body["inboxCount"] as? NSNumber)?.intValue ?? 0
-        if count != inboxCount { inboxCount = count }
+        update(\.sidebarWidth, CGFloat(width.doubleValue))
+        update(\.inboxCount, (body["inboxCount"] as? NSNumber)?.intValue ?? 0)
     }
 
     // MARK: Navigation
@@ -270,13 +275,19 @@ struct AuthPopup: Identifiable {
         let alert = NSAlert(); alert.messageText = message; alert.runModal(); completionHandler()
     }
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
-        let alert = NSAlert(); alert.messageText = message; alert.addButton(withTitle: "OK"); alert.addButton(withTitle: "Cancel")
-        completionHandler(alert.runModal() == .alertFirstButtonReturn)
+        completionHandler(okCancelAlert(message).runModal() == .alertFirstButtonReturn)
     }
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
-        let alert = NSAlert(); alert.messageText = prompt; alert.addButton(withTitle: "OK"); alert.addButton(withTitle: "Cancel")
+        let alert = okCancelAlert(prompt)
         let field = NSTextField(string: defaultText ?? ""); field.frame = NSRect(x: 0, y: 0, width: 300, height: 24); alert.accessoryView = field
         completionHandler(alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil)
+    }
+    private func okCancelAlert(_ message: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Cancel")
+        return alert
     }
 }
 

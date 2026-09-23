@@ -96,8 +96,8 @@ private struct PotionCommands: Commands {
         }
         CommandMenu("Theme") {
             ForEach(Array(store.choices.enumerated()), id: \.element.id) { index, theme in
-                let toggle = Toggle(theme.name, isOn: Binding(get: { store.activeID == theme.id }, set: { if $0 { store.activate(theme.id) } }))
-                if index < 9 { toggle.keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [.command, .control]) } else { toggle }
+                Toggle(theme.name, isOn: Binding(get: { store.activeID == theme.id }, set: { if $0 { store.activate(theme.id) } }))
+                    .keyboardShortcut(index < 9 ? KeyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [.command, .control]) : nil)
             }
             Divider()
             Button("Customize Theme…") { appearance?.customize(store.selected) }
