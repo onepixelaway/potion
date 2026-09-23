@@ -15,11 +15,10 @@ struct MainView: View {
         .ignoresSafeArea(edges: .top)
         // The title names the window in the Window menu; the header itself shows tabs.
         .navigationTitle(workspace.displayTitle)
-        .toolbar(removing: .title)
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .hiddenTitleBar()
         .modifier(TitleBarHeight())
         // Header controls over the page follow the theme's light or dark appearance.
-        .preferredColorScheme(store.enabled ? (store.selected.isDark ? .dark : .light) : nil)
+        .preferredColorScheme(store.active.map { $0.isDark ? .dark : .light })
         .inspector(isPresented: $appearance.isShown) {
             AppearancePanel(store: store, tabs: tabs, appearance: appearance)
                 .inspectorColumnWidth(min: 290, ideal: 310, max: 380)
@@ -131,7 +130,7 @@ private struct TabStrip: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let tabWidth = min(170, max(72, (proxy.size.width - 44) / CGFloat(tabs.tabs.count)))
+            let tabWidth = ((proxy.size.width - 44) / CGFloat(tabs.tabs.count)).clamped(to: 72...170)
             HStack(spacing: 0) {
                 ForEach(tabs.tabs) { tab in
                     TabItem(workspace: tab, isSelected: tab === tabs.current, tabs: tabs)
@@ -317,10 +316,10 @@ private struct BrowserView: View {
     var body: some View {
         WebViewHost(webView: workspace.webView)
             // Matches the page color so switching pages never flashes white under a dark theme.
-            .background(store.enabled ? Color(hex: store.selected.background) : Color(nsColor: .textBackgroundColor))
+            .background(store.active.map { Color(hex: $0.background) } ?? Color(nsColor: .textBackgroundColor))
             .overlay(alignment: .top) {
                 LoadingBar(isLoading: workspace.isLoading, progress: workspace.progress)
-                    .padding(.top, workspace.usesWindowLayout ? ThemeInjection.headerHeight : 0)
+                    .padding(.top, ThemeInjection.headerHeight)
             }
             .overlay {
                 if let error = workspace.error {

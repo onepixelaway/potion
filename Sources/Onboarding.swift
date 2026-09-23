@@ -132,9 +132,12 @@ private struct WebCard: View {
 extension View {
     /// Onboarding fills the window edge to edge: no title or toolbar, over a translucent window background.
     func onboardingChrome() -> some View {
-        toolbar(removing: .title)
-            .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-            .containerBackground(.thickMaterial, for: .window)
+        hiddenTitleBar().containerBackground(.thickMaterial, for: .window)
+    }
+
+    /// No window title or toolbar background, so content reaches the top edge.
+    func hiddenTitleBar() -> some View {
+        toolbar(removing: .title).toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     }
 
     /// Pins controls below scrolling content, separated by a divider, so nothing scrolls underneath them.

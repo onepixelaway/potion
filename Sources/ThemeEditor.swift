@@ -17,7 +17,6 @@ struct ThemeEditor: View {
         _draft = State(initialValue: original)
     }
     private var isNew: Bool { !store.customs.contains { $0.id == original.id } }
-    private var canSave: Bool { !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var body: some View {
         Form {
@@ -68,16 +67,16 @@ struct ThemeEditor: View {
                     store.save(draft)
                     appearance.editing = nil
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentStyle()
                 .keyboardShortcut(.defaultAction)
-                .disabled(!canSave)
+                .disabled(!draft.hasName)
             }
             .padding(16)
         }
         .onAppear { tabs.preview(draft) }
         .onChange(of: draft) { _, theme in tabs.preview(theme) }
         // Choosing a different theme (from the Theme menu) abandons the edit.
-        .onChange(of: store.activeID) { _, _ in if !saved { appearance.editing = nil } }
+        .onChange(of: store.activeID) { _, _ in appearance.editing = nil }
         .onDisappear { if !saved { tabs.restoreStyling() } }
     }
 

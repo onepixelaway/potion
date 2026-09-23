@@ -136,23 +136,24 @@ final class PotionTests: XCTestCase {
         let loaded = NSPredicate { _, _ in workspace.webView.url?.isFileURL == true && !workspace.webView.isLoading }
         let expectation = XCTNSPredicateExpectation(predicate: loaded, object: nil)
         await fulfillment(of: [expectation], timeout: 15)
-        let paper = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.body).backgroundColor") as? String
+        func js(_ source: String) async throws -> Any? { try await workspace.webView.evaluateJavaScript(source) }
+        let paper = try await js("getComputedStyle(document.body).backgroundColor") as? String
         XCTAssertEqual(paper, "rgb(248, 245, 239)")
-        let fontLoaded = try await workspace.webView.evaluateJavaScript("document.fonts.size") as? Int
+        let fontLoaded = try await js("document.fonts.size") as? Int
         XCTAssertEqual(fontLoaded, 6)
-        let heading = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.querySelector('h1')).fontFamily") as? String
+        let heading = try await js("getComputedStyle(document.querySelector('h1')).fontFamily") as? String
         XCTAssertTrue(heading?.contains("Lora") == true)
         workspace.apply(PotionTheme.presets[4], enabled: true)
-        let dark = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.body).backgroundColor") as? String
+        let dark = try await js("getComputedStyle(document.body).backgroundColor") as? String
         XCTAssertEqual(dark, "rgb(32, 37, 44)")
         workspace.apply(PotionTheme.presets[4], enabled: false)
-        let disabled = try await workspace.webView.evaluateJavaScript("document.getElementById('potion-theme').textContent") as? String
+        let disabled = try await js("document.getElementById('potion-theme').textContent") as? String
         XCTAssertEqual(disabled, "")
         workspace.apply(PotionTheme.presets[1], enabled: true)
-        _ = try await workspace.webView.evaluateJavaScript("document.getElementById('potion-theme').remove()")
-        let reapplied = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.body).backgroundColor") as? String
+        _ = try await js("document.getElementById('potion-theme').remove()")
+        let reapplied = try await js("getComputedStyle(document.body).backgroundColor") as? String
         XCTAssertEqual(reapplied, "rgb(237, 242, 235)")
-        _ = try await workspace.webView.evaluateJavaScript("""
+        _ = try await js("""
           document.body.insertAdjacentHTML('beforeend', `<div class="notion-app-inner notion-dark-theme"><div class="notion-page-content">
             <div class="notion-header-block"><div id="test-heading" contenteditable="true" style="font-size:30px">Heading</div></div>
             <div class="notion-text-block"><div id="test-body" contenteditable="true" style="font-size:16px;color:var(--c-texPri)">Body</div></div>
@@ -162,15 +163,27 @@ final class PotionTests: XCTestCase {
             <div id="test-sidebar-list" class="notion-scroller vertical">Pages</div>
           </div></div></div>`);
         """)
-        let headingSize = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-heading')).fontSize") as? String
+        let headingSize = try await js("getComputedStyle(document.getElementById('test-heading')).fontSize") as? String
         XCTAssertEqual(headingSize, "30px", "Heading hierarchy must not be flattened by body sizing")
-        let bodyColor = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-body')).color") as? String
+        let bodyColor = try await js("getComputedStyle(document.getElementById('test-body')).color") as? String
         XCTAssertEqual(bodyColor, "rgb(41, 63, 53)")
-        let intentionalColor = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-colored')).color") as? String
+        let intentionalColor = try await js("getComputedStyle(document.getElementById('test-colored')).color") as? String
         XCTAssertEqual(intentionalColor, "rgb(255, 0, 0)")
-        let sidebarList = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-sidebar-list')).backgroundColor") as? String
+        let sidebarList = try await js("getComputedStyle(document.getElementById('test-sidebar-list')).backgroundColor") as? String
         XCTAssertEqual(sidebarList, "rgba(0, 0, 0, 0)", "The sidebar's page list shows the sidebar color, not the page color")
-        let codeFont = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-code')).fontFamily") as? String
+        let codeFont = try await js("getComputedStyle(document.getElementById('test-code')).fontFamily") as? String
         XCTAssertTrue(codeFont?.contains("monospace") == true)
+    }
+    @MainActor func testFontsLoadOnlyWhileThemed() async throws {
+        let workspace = Workspace()
+        workspace.apply(PotionTheme.presets[0], enabled: false)
+        workspace.showPreview()
+        let loaded = NSPredicate { _, _ in workspace.webView.url?.isFileURL == true && !workspace.webView.isLoading }
+        await fulfillment(of: [XCTNSPredicateExpectation(predicate: loaded, object: nil)], timeout: 15)
+        let unthemed = try await workspace.webView.evaluateJavaScript("document.fonts.size") as? Int
+        XCTAssertEqual(unthemed, 0, "Notion's own look doesn't load the bundled fonts")
+        workspace.apply(PotionTheme.presets[0], enabled: true)
+        let themed = try await workspace.webView.evaluateJavaScript("document.fonts.size") as? Int
+        XCTAssertEqual(themed, 6, "Turning a theme on brings the fonts to the open page")
     }
 }

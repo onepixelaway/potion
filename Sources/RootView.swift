@@ -36,12 +36,8 @@ struct RootView: View {
                     appearance.beginFirstThemeChoice()
                 case (.ready, .signIn):
                     appearance.isShown = false
-                    if let keeper = flow.keeperWindow, keeper !== tabs.window {
-                        tabs.window?.close()
-                    } else {
-                        tabs.closeOthers(than: tabs.current)
-                        tabs.current.returnToLogin()
-                    }
+                    tabs.closeOthers(than: tabs.current)
+                    tabs.current.returnToLogin()
                 default:
                     break
                 }
