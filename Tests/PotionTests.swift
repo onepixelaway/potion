@@ -27,6 +27,86 @@ final class PotionTests: XCTestCase {
         }
         XCTAssertFalse(NavigationPolicy.canOpenExternally(URL(string: "javascript:alert(1)")!))
     }
+    func testSignInPopupsAndRedirectsStayInPotion() {
+        let login = URL(string: "https://app.notion.com/login")!
+        let popupCheck = URL(string: "https://app.notion.com/verifyNoPopupBlockerHtmlAndRedirect?redirectUri=x")!
+        // Notion's OAuth popup is on Notion's own domain and must not replace the login page.
+        XCTAssertTrue(NavigationPolicy.isSignInPopup(popupCheck, hasWindowSize: false))
+        XCTAssertTrue(NavigationPolicy.isSignInPopup(URL(string: "https://app.notion.com/anything")!, hasWindowSize: true))
+        XCTAssertFalse(NavigationPolicy.isSignInPopup(URL(string: "https://app.notion.com/Team-Page-abc123")!, hasWindowSize: false))
+        XCTAssertEqual(NavigationPolicy.decision(for: URL(string: "https://appleid.apple.com/auth/authorize")!, isLinkClick: false, from: login), .allow)
+        XCTAssertEqual(NavigationPolicy.decision(for: URL(string: "https://acme.okta.com/sso")!, isLinkClick: false, from: login), .allow)
+        XCTAssertEqual(NavigationPolicy.decision(for: URL(string: "https://example.com")!, isLinkClick: true, from: login), .openExternally)
+        XCTAssertEqual(NavigationPolicy.decision(for: URL(string: "https://acme.okta.com/help")!, isLinkClick: true, from: URL(string: "https://acme.okta.com/sso")!), .allow)
+        XCTAssertEqual(NavigationPolicy.decision(for: URL(string: "javascript:alert(1)")!, isLinkClick: true, from: login), .cancel)
+        // Popups start on Notion or a known provider, then may follow the provider's redirects.
+        XCTAssertEqual(NavigationPolicy.popupDecision(for: popupCheck, from: nil), .allow)
+        XCTAssertEqual(NavigationPolicy.popupDecision(for: URL(string: "https://example.com")!, from: URL(string: "about:blank")!), .openExternally)
+        XCTAssertEqual(NavigationPolicy.popupDecision(for: URL(string: "https://login.live.com/oauth")!, from: nil), .allow)
+        XCTAssertEqual(NavigationPolicy.popupDecision(for: URL(string: "https://accounts.youtube.com/x")!, from: URL(string: "https://accounts.google.com/v3/signin")!), .allow)
+    }
+    func testWorkspaceDetectionMarksSignInComplete() {
+        for address in ["https://app.notion.com/login", "https://app.notion.com/", "https://app.notion.com/onboarding",
+                        "https://app.notion.com/googlepopupredirect?x=1", "https://app.notion.com/googlepopupcallback",
+                        "https://team.notion.site/Public-Page", "https://accounts.google.com/x"] {
+            XCTAssertFalse(NavigationPolicy.isWorkspacePage(URL(string: address)!), address)
+        }
+        for address in ["https://app.notion.com/My-Page-0123456789abcdef", "https://www.notion.so/acme/Roadmap-abc"] {
+            XCTAssertTrue(NavigationPolicy.isWorkspacePage(URL(string: address)!), address)
+        }
+    }
+    @MainActor func testSignInFlowPersistsAndSignOutResets() {
+        let suite = "PotionTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let flow = AppFlow(defaults: defaults)
+        XCTAssertEqual(flow.stage, .welcome)
+        flow.signInChanged(true)
+        XCTAssertEqual(flow.stage, .welcome, "Signing in in the background must not skip the welcome")
+        flow.go(to: .signIn)
+        flow.signInChanged(true)
+        XCTAssertEqual(flow.stage, .ready)
+        XCTAssertEqual(AppFlow(defaults: defaults).stage, .ready)
+        flow.didSignOut(keeping: nil)
+        XCTAssertEqual(flow.stage, .signIn)
+        XCTAssertEqual(AppFlow(defaults: defaults).stage, .welcome)
+    }
+    @MainActor func testAppearancePanelFirstChoiceAndEditing() {
+        let appearance = AppearanceState()
+        XCTAssertFalse(appearance.isShown)
+        appearance.beginFirstThemeChoice()
+        XCTAssertTrue(appearance.isShown)
+        XCTAssertTrue(appearance.isChoosingFirstTheme)
+        appearance.themeChosen()
+        XCTAssertFalse(appearance.isChoosingFirstTheme)
+        appearance.newTheme(from: PotionTheme.presets[0])
+        XCTAssertEqual(appearance.editing?.name, "My Paper")
+        XCTAssertEqual(appearance.editing?.isCustom, true)
+        appearance.isShown = false
+        XCTAssertNil(appearance.editing, "Closing the panel abandons an edit")
+    }
+    func testPageChromeParsingAndTabTitles() {
+        let color = NSColor(css: "rgb(32, 37, 44)")
+        XCTAssertEqual(color?.hex, "20252C")
+        XCTAssertEqual(NSColor(css: "rgba(255, 255, 255, 0.9)")?.hex, "FFFFFF")
+        XCTAssertNil(NSColor(css: "rgba(0, 0, 0, 0)"))
+        XCTAssertNil(NSColor(css: "transparent"))
+        XCTAssertEqual(NavigationPolicy.pageTitle("The 4P Framework | Notion"), "The 4P Framework")
+        XCTAssertEqual(NavigationPolicy.pageTitle("  "), "Notion")
+        XCTAssertEqual(NavigationPolicy.withoutQuery(URL(string: "https://app.notion.com/Page-1?pvs=4#abc")!)?.absoluteString, "https://app.notion.com/Page-1")
+    }
+    @MainActor func testOriginalNotionSelection() {
+        let suite = "PotionTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = ThemeStore(defaults: defaults)
+        store.activate(ThemeStore.originalID)
+        XCTAssertFalse(store.enabled)
+        XCTAssertEqual(store.activeID, ThemeStore.originalID)
+        store.activate("midnight")
+        XCTAssertTrue(store.enabled)
+        XCTAssertEqual(store.selected.name, "Midnight")
+    }
     @MainActor func testSaveEditDeleteAndRestoreTheme() {
         let suite = "PotionTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!

@@ -2,77 +2,168 @@ import SwiftUI
 import WebKit
 import UniformTypeIdentifiers
 
-@MainActor final class Workspace: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
+/// The colors and sidebar width of the Notion page, so the window header can continue Notion's layout.
+struct PageChrome: Equatable {
+    var sidebarWidth: CGFloat = 0
+    var sidebarColor: NSColor?
+    var pageColor: NSColor?
+}
+
+/// A sign-in window a page opened with `window.open`, shown as a sheet.
+struct AuthPopup: Identifiable {
     let webView: WKWebView
-    @Published var isPreview = true
-    @Published var isLoading = false
-    @Published var canGoBack = false
-    @Published var canGoForward = false
+    var id: ObjectIdentifier { ObjectIdentifier(webView) }
+}
+
+@MainActor final class Workspace: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler {
+    static let loginURL = URL(string: "https://app.notion.com/login")!
+    static let homeURL = URL(string: "https://app.notion.com/")!
+    private static let lastURLKey = "potion.lastNotionURL"
+
+    let webView: WKWebView
+    @Published private(set) var isLoading = false
+    @Published private(set) var progress = 0.0
+    @Published private(set) var canGoBack = false
+    @Published private(set) var canGoForward = false
+    @Published private(set) var title = ""
+    @Published private(set) var isSignedIn = false
     @Published var error: String?
-    private var theme = PotionTheme.presets[0]
-    private var enabled = true
+    @Published var authPopup: AuthPopup?
+    @Published private(set) var chrome = PageChrome()
+    /// The current workspace page, restored per window and tab on relaunch.
+    @Published private(set) var pageURL: URL?
+    /// Opens a Notion page in a new tab. Set by the window hosting this workspace.
+    var onOpenTab: ((URL) -> Void)?
     private var observations: [NSKeyValueObservation] = []
-    private var authWindows: [NSWindow] = []
+    private var popups: [WKWebView] = []
 
     override init() {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
+        // Identity providers (Google in particular) refuse sign-in from user agents that don't look like Safari.
+        configuration.applicationNameForUserAgent = Self.safariApplicationName
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init()
+        configuration.userContentController.add(WeakMessageHandler(self), name: ThemeInjection.chromeMessage)
+        installScripts(themeScript: nil)
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
         webView.setValue(false, forKey: "drawsBackground")
-        for key in [\WKWebView.isLoading, \.canGoBack, \.canGoForward] {
-            observations.append(webView.observe(key, options: [.new]) { [weak self] _, _ in
-                Task { @MainActor in self?.updateState() }
-            })
-        }
+        observations = [
+            webView.observe(\.isLoading) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
+            webView.observe(\.estimatedProgress) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
+            webView.observe(\.canGoBack) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
+            webView.observe(\.canGoForward) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
+            webView.observe(\.title) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
+            webView.observe(\.url) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
+        ]
+    }
+
+    private static var safariApplicationName: String {
+        let major = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+        return "Version/\(major >= 26 ? major : major + 3).0 Safari/605.1.15"
     }
 
     func apply(_ theme: PotionTheme, enabled: Bool) {
-        self.theme = theme
-        self.enabled = enabled
+        installScripts(themeScript: ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: true))
+        webView.evaluateJavaScript(ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: false) + ThemeInjection.chromeRefresh, completionHandler: nil)
+    }
+    private func installScripts(themeScript: String?) {
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
-        controller.addUserScript(WKUserScript(source: ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: true), injectionTime: .atDocumentEnd, forMainFrameOnly: true))
-        webView.evaluateJavaScript(ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: false), completionHandler: nil)
+        controller.addUserScript(WKUserScript(source: ThemeInjection.chromeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        if let themeScript {
+            controller.addUserScript(WKUserScript(source: themeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        }
     }
+    /// Shows or hides Notion's own sidebar, as its ⌘\ shortcut does.
+    func toggleSidebar() {
+        webView.evaluateJavaScript(ThemeInjection.toggleSidebarScript, completionHandler: nil)
+    }
+    var displayTitle: String { NavigationPolicy.pageTitle(title) }
+
+    /// Loads the offline sample page. Used to verify theme rendering without a Notion account.
     func showPreview() {
         guard let url = Bundle.main.url(forResource: "Preview", withExtension: "html") else { error = "The preview could not be found."; return }
         error = nil
-        isPreview = true
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
     }
-    func openNotion() {
+    func openLogin() {
         error = nil
-        isPreview = false
-        let saved = UserDefaults.standard.url(forKey: "potion.lastNotionURL")
-        let url = saved.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil } ?? URL(string: "https://app.notion.com/login")!
-        webView.load(URLRequest(url: url))
+        webView.load(URLRequest(url: Self.loginURL))
     }
-    func reload() { error = nil; webView.reload() }
+    /// Opens a Notion page, or else the last page, or else the login page (Notion sends signed-in people onward).
+    func open(_ url: URL? = nil) {
+        error = nil
+        let saved = UserDefaults.standard.url(forKey: Self.lastURLKey)
+        let candidates = [url, saved.flatMap { NavigationPolicy.isWorkspacePage($0) ? $0 : nil }]
+        webView.load(URLRequest(url: candidates.compactMap { $0 }.first { NavigationPolicy.isNotion($0) } ?? Self.loginURL))
+    }
+    func reload() {
+        error = nil
+        if webView.url == nil { open() } else { webView.reload() }
+    }
+    func goBack() { webView.goBack() }
+    func goForward() { webView.goForward() }
+    var canOpenInBrowser: Bool { webView.url.map(NavigationPolicy.canOpenExternally) ?? false }
     func openInBrowser() {
         guard let url = webView.url, NavigationPolicy.canOpenExternally(url) else { return }
         NSWorkspace.shared.open(url)
     }
+    /// Removes every cookie and cache Potion's web views have stored. All windows share this data store.
+    static func removeWebsiteData() async {
+        let store = WKWebsiteDataStore.default()
+        let types = WKWebsiteDataStore.allWebsiteDataTypes()
+        let records = await store.dataRecords(ofTypes: types)
+        await store.removeData(ofTypes: types, for: records)
+        UserDefaults.standard.removeObject(forKey: lastURLKey)
+    }
+    func returnToLogin() {
+        closeAuthPopup()
+        isSignedIn = false
+        pageURL = nil
+        openLogin()
+    }
+    func closeAuthPopup() {
+        guard let popup = authPopup?.webView else { return }
+        popup.stopLoading()
+        popups.removeAll { $0 === popup }
+        authPopup = nil
+    }
+
     private func updateState() {
         isLoading = webView.isLoading
+        progress = webView.estimatedProgress
         canGoBack = webView.canGoBack
         canGoForward = webView.canGoForward
-    }
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard webView === self.webView else { return }
-        isPreview = webView.url?.isFileURL ?? false
-        error = nil
-        if let url = webView.url, NavigationPolicy.isNotion(url), !url.path.contains("login"), !url.path.contains("signup") {
-            // Persist the path only; authentication query parameters are never saved.
-            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            components?.query = nil
-            components?.fragment = nil
-            if let safeURL = components?.url { UserDefaults.standard.set(safeURL, forKey: "potion.lastNotionURL") }
+        title = webView.title ?? ""
+        guard let url = webView.url, !url.isFileURL else { return }
+        // Notion is a single-page app, so the URL is observed directly rather than waiting for didFinish.
+        let signedIn = NavigationPolicy.isWorkspacePage(url)
+        if signedIn, let safeURL = NavigationPolicy.withoutQuery(url), safeURL != pageURL {
+            pageURL = safeURL
+            UserDefaults.standard.set(safeURL, forKey: Self.lastURLKey)
         }
+        if NavigationPolicy.isNotion(url), signedIn != isSignedIn { isSignedIn = signedIn }
+    }
+
+    // MARK: Page chrome
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.frameInfo.isMainFrame, let url = message.frameInfo.request.url, NavigationPolicy.isNotion(url),
+              let body = message.body as? [String: Any] else { return }
+        let next = PageChrome(sidebarWidth: CGFloat((body["sidebarWidth"] as? NSNumber)?.doubleValue ?? 0),
+                              sidebarColor: (body["sidebarColor"] as? String).flatMap(NSColor.init(css:)),
+                              pageColor: (body["pageColor"] as? String).flatMap(NSColor.init(css:)))
+        if next != chrome { chrome = next }
+    }
+
+    // MARK: Navigation
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === self.webView { error = nil }
     }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { handle(error, in: webView) }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { handle(error, in: webView) }
@@ -89,18 +180,64 @@ import UniformTypeIdentifiers
         if action.shouldPerformDownload { decisionHandler(.download); return }
         if action.targetFrame?.isMainFrame == false { decisionHandler(.allow); return }
         if url.isFileURL {
-            let allowed = Bundle.main.url(forResource: "Preview", withExtension: "html")
-            decisionHandler(url == allowed ? .allow : .cancel)
-        } else if NavigationPolicy.isNotion(url) || NavigationPolicy.isAuthentication(url) || url.absoluteString == "about:blank" {
+            decisionHandler(url == Bundle.main.url(forResource: "Preview", withExtension: "html") ? .allow : .cancel)
+            return
+        }
+        let isPopup = webView !== self.webView
+        // ⌘-click opens a Notion page in a new tab, as in Notion's own app.
+        if !isPopup, action.navigationType == .linkActivated, action.modifierFlags.contains(.command),
+           NavigationPolicy.isNotion(url), let onOpenTab {
+            onOpenTab(url)
+            decisionHandler(.cancel)
+            return
+        }
+        let decision = isPopup
+            ? NavigationPolicy.popupDecision(for: url, from: webView.url)
+            : NavigationPolicy.decision(for: url, isLinkClick: action.navigationType == .linkActivated, from: webView.url)
+        switch decision {
+        case .allow:
+            if isPopup, url.absoluteString != "about:blank", authPopup?.webView !== webView {
+                authPopup = AuthPopup(webView: webView)
+            }
             decisionHandler(.allow)
-        } else {
-            if NavigationPolicy.canOpenExternally(url) { NSWorkspace.shared.open(url) }
+        case .openExternally:
+            NSWorkspace.shared.open(url)
+            decisionHandler(.cancel)
+            if isPopup { webViewDidClose(webView) }
+        case .cancel:
             decisionHandler(.cancel)
         }
     }
     func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(response.canShowMIMEType ? .allow : .download)
     }
+
+    // MARK: Windows
+
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        guard let url = action.request.url else { return nil }
+        if NavigationPolicy.isNotion(url) && !NavigationPolicy.isSignInPopup(url, hasWindowSize: windowFeatures.width != nil) {
+            if let onOpenTab { onOpenTab(url) } else { self.webView.load(action.request) }
+            return nil
+        }
+        guard NavigationPolicy.isNotion(url) || NavigationPolicy.isAuthentication(url) || url.absoluteString == "about:blank" || url.absoluteString.isEmpty else {
+            if NavigationPolicy.canOpenExternally(url) { NSWorkspace.shared.open(url) }
+            return nil
+        }
+        // The popup must be a real window: Notion's sign-in page waits for it to report back via window.opener.
+        let popup = WKWebView(frame: NSRect(x: 0, y: 0, width: 520, height: 680), configuration: configuration)
+        popup.navigationDelegate = self
+        popup.uiDelegate = self
+        popups.append(popup)
+        return popup
+    }
+    func webViewDidClose(_ webView: WKWebView) {
+        popups.removeAll { $0 === webView }
+        if authPopup?.webView === webView { authPopup = nil }
+    }
+
+    // MARK: Downloads and panels
+
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) { download.delegate = self }
     func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) { download.delegate = self }
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
@@ -109,31 +246,6 @@ import UniformTypeIdentifiers
         panel.begin { response in completionHandler(response == .OK ? panel.url : nil) }
     }
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) { self.error = "Download failed: \(error.localizedDescription)" }
-    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        guard let url = action.request.url else { return nil }
-        if NavigationPolicy.isNotion(url) { self.webView.load(action.request); return nil }
-        guard NavigationPolicy.isAuthentication(url) || url.absoluteString == "about:blank" else {
-            if NavigationPolicy.canOpenExternally(url) { NSWorkspace.shared.open(url) }
-            return nil
-        }
-        let popup = WKWebView(frame: .zero, configuration: configuration)
-        popup.navigationDelegate = self
-        popup.uiDelegate = self
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 720), styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.title = "Sign in to Notion"
-        window.contentView = popup
-        window.isReleasedWhenClosed = false
-        window.center()
-        window.makeKeyAndOrderFront(nil)
-        authWindows.append(window)
-        return popup
-    }
-    func webViewDidClose(_ webView: WKWebView) {
-        if let window = authWindows.first(where: { $0.contentView === webView }) {
-            window.close()
-            authWindows.removeAll { $0 === window }
-        }
-    }
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = parameters.allowsMultipleSelection
@@ -154,8 +266,45 @@ import UniformTypeIdentifiers
     }
 }
 
-struct WebWorkspace: NSViewRepresentable {
-    let workspace: Workspace
-    func makeNSView(context: Context) -> WKWebView { workspace.webView }
-    func updateNSView(_ view: WKWebView, context: Context) {}
+/// Script message handlers are retained by WebKit; this breaks the cycle back to the workspace.
+private final class WeakMessageHandler: NSObject, WKScriptMessageHandler {
+    weak var target: WKScriptMessageHandler?
+    init(_ target: WKScriptMessageHandler) { self.target = target }
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        target?.userContentController(controller, didReceive: message)
+    }
+}
+
+extension NSColor {
+    /// Parses a computed CSS color such as `rgb(32, 37, 44)` or `rgba(0, 0, 0, 0.5)`. Transparent colors are nil.
+    convenience init?(css: String) {
+        let numbers = css.split { !"0123456789.".contains($0) }.compactMap { Double($0) }
+        guard css.hasPrefix("rgb"), numbers.count >= 3 else { return nil }
+        let alpha = numbers.count > 3 ? numbers[3] : 1
+        guard alpha > 0.5 else { return nil }
+        self.init(srgbRed: numbers[0] / 255, green: numbers[1] / 255, blue: numbers[2] / 255, alpha: 1)
+    }
+}
+
+/// Hosts a web view in SwiftUI. The web view is moved into whichever host appears last, so the one
+/// persistent Notion web view can move between onboarding and the main window without reloading.
+struct WebViewHost: NSViewRepresentable {
+    let webView: WKWebView
+    var cornerRadius: CGFloat = 0
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        return container
+    }
+    func updateNSView(_ container: NSView, context: Context) {
+        container.layer?.cornerRadius = cornerRadius
+        container.layer?.cornerCurve = .continuous
+        container.layer?.masksToBounds = cornerRadius > 0
+        guard webView.superview !== container else { return }
+        webView.removeFromSuperview()
+        webView.frame = container.bounds
+        webView.autoresizingMask = [.width, .height]
+        container.addSubview(webView)
+    }
 }

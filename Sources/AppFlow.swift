@@ -1,0 +1,101 @@
+import SwiftUI
+import WebKit
+
+/// Where the person is in Potion, shared by every window: first-run onboarding (welcome → sign in) or the workspace.
+@MainActor final class AppFlow: ObservableObject {
+    enum Stage { case welcome, signIn, ready }
+
+    @Published private(set) var stage: Stage
+    /// After signing out, the one window that stays open for signing back in. The rest close.
+    private(set) weak var keeperWindow: NSWindow?
+    private let windows = NSHashTable<NSWindow>.weakObjects()
+    private let defaults: UserDefaults
+    private static let completedKey = "potion.onboardingCompleted"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        stage = defaults.bool(forKey: Self.completedKey) ? .ready : .welcome
+    }
+
+    var isOnboarding: Bool { stage != .ready }
+    /// Themes restyle Notion only after sign-in, so the login page always looks like Notion's own.
+    var showsThemes: Bool { stage == .ready }
+
+    func go(to stage: Stage) {
+        withAnimation(.smooth(duration: 0.35)) { self.stage = stage }
+    }
+    func signInChanged(_ signedIn: Bool) {
+        if signedIn && stage == .signIn { completeOnboarding() }
+    }
+    func completeOnboarding() {
+        defaults.set(true, forKey: Self.completedKey)
+        go(to: .ready)
+    }
+
+    func register(_ window: NSWindow) { windows.add(window) }
+
+    func requestSignOut() {
+        let window = NSApp.orderedWindows.first { windows.contains($0) }
+        let alert = NSAlert()
+        alert.messageText = "Sign out of Notion?"
+        alert.informativeText = "Potion will remove Notion’s cookies and website data from this Mac and close your other tabs. Your themes stay."
+        alert.addButton(withTitle: "Sign Out").hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancel")
+        let signOut = { [weak self] in
+            Task { @MainActor in
+                await Workspace.removeWebsiteData()
+                self?.didSignOut(keeping: window)
+            }
+        }
+        if let window {
+            alert.beginSheetModal(for: window) { if $0 == .alertFirstButtonReturn { signOut() } }
+        } else if alert.runModal() == .alertFirstButtonReturn {
+            signOut()
+        }
+    }
+    func didSignOut(keeping window: NSWindow?) {
+        keeperWindow = window
+        defaults.set(false, forKey: Self.completedKey)
+        go(to: .signIn)
+    }
+}
+
+/// Per-window state of the Appearance panel: the theme gallery, and the editor while a theme is being edited.
+@MainActor final class AppearanceState: ObservableObject {
+    @Published var isShown = false {
+        didSet {
+            guard !isShown else { return }
+            isChoosingFirstTheme = false
+            editing = nil
+        }
+    }
+    /// True right after sign-in, while the panel invites the person to pick their first theme.
+    @Published private(set) var isChoosingFirstTheme = false
+    @Published var editing: PotionTheme?
+
+    /// Opens the panel so the first thing people do in their workspace is pick a theme.
+    func beginFirstThemeChoice() {
+        isShown = true
+        isChoosingFirstTheme = true
+    }
+    /// The first theme choice closes the panel after a moment, so the new look is seen settling in.
+    func themeChosen() {
+        guard isChoosingFirstTheme else { return }
+        isChoosingFirstTheme = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(650))
+            withAnimation(.smooth) { isShown = false }
+        }
+    }
+    func customize(_ theme: PotionTheme) {
+        isShown = true
+        editing = theme
+    }
+    func newTheme(from theme: PotionTheme) {
+        var copy = theme
+        copy.id = UUID().uuidString
+        copy.name = "My \(theme.name)"
+        copy.isCustom = true
+        customize(copy)
+    }
+}

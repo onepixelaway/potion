@@ -61,6 +61,14 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         customs = archive?.customs.map(\.validated) ?? []
         enabled = defaults.object(forKey: "themeEnabled") as? Bool ?? true
     }
+    /// Selection identifier for Notion's own styling, which sits alongside the themes in pickers.
+    static let originalID = "original"
+    var all: [PotionTheme] { PotionTheme.presets + customs }
+    var activeID: String { enabled ? selected.id : Self.originalID }
+    func activate(_ id: String) {
+        if id == Self.originalID { enabled = false }
+        else if let theme = all.first(where: { $0.id == id }) { select(theme) }
+    }
     func select(_ theme: PotionTheme) { selected = theme; enabled = true }
     func save(_ theme: PotionTheme) {
         var saved = theme.validated
