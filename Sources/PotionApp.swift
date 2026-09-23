@@ -69,9 +69,7 @@ private struct PotionCommands: Commands {
             Button("Toggle Notion Sidebar") { workspace?.toggleSidebar() }
                 .keyboardShortcut("\\")
                 .disabled(!inWorkspace || workspace == nil)
-            Button(appearance?.isShown == true ? "Hide Appearance" : "Show Appearance") {
-                withAnimation(.smooth) { appearance?.isShown.toggle() }
-            }
+            Button(appearance?.isShown == true ? "Hide Appearance" : "Show Appearance") { appearance?.toggle() }
             .keyboardShortcut("i", modifiers: [.command, .control])
             .disabled(!inWorkspace || appearance == nil)
             Divider()
@@ -97,7 +95,7 @@ private struct PotionCommands: Commands {
             Divider()
         }
         CommandMenu("Theme") {
-            ForEach(Array(([PotionTheme.original] + store.all).enumerated()), id: \.element.id) { index, theme in
+            ForEach(Array(store.choices.enumerated()), id: \.element.id) { index, theme in
                 let toggle = Toggle(theme.name, isOn: Binding(get: { store.activeID == theme.id }, set: { if $0 { store.activate(theme.id) } }))
                 if index < 9 { toggle.keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [.command, .control]) } else { toggle }
             }
@@ -129,7 +127,7 @@ private struct SettingsView: View {
             }
             Section {
                 Picker("Theme", selection: Binding(get: { store.activeID }, set: { store.activate($0) })) {
-                    ForEach([PotionTheme.original] + store.all) { theme in Text(theme.name).tag(theme.id) }
+                    ForEach(store.choices) { theme in Text(theme.name).tag(theme.id) }
                 }
             } header: {
                 Text("Appearance")

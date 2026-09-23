@@ -25,7 +25,18 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         .init(id: "mono", name: "Studio", subtitle: "Less noise. More clarity.", headingFont: "Space Grotesk", bodyFont: "Manrope", background: "F5F5F3", surface: "E8E8E5", text: "303330", accent: "56665F")
     ]
 
+    static let fontSizeRange: ClosedRange<Double> = 13...22
+    static let lineHeightRange: ClosedRange<Double> = 1.3...2
+
     var isDark: Bool { NSColor(hex: background).brightnessComponent < 0.45 }
+    /// A new custom theme mixed from this one.
+    func customCopy() -> PotionTheme {
+        var copy = self
+        copy.id = UUID().uuidString
+        copy.name = "My \(name)"
+        copy.isCustom = true
+        return copy
+    }
     var validated: PotionTheme {
         var copy = self
         let fallback = Self.presets[0]
@@ -34,8 +45,8 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         }
         if !FontCatalog.families.contains(copy.headingFont) { copy.headingFont = fallback.headingFont }
         if !FontCatalog.families.contains(copy.bodyFont) { copy.bodyFont = fallback.bodyFont }
-        copy.fontSize = copy.fontSize.isFinite ? min(22, max(13, copy.fontSize)) : 16
-        copy.lineHeight = copy.lineHeight.isFinite ? min(2, max(1.3, copy.lineHeight)) : 1.65
+        copy.fontSize = copy.fontSize.isFinite ? copy.fontSize.clamped(to: Self.fontSizeRange) : fallback.fontSize
+        copy.lineHeight = copy.lineHeight.isFinite ? copy.lineHeight.clamped(to: Self.lineHeightRange) : fallback.lineHeight
         copy.name = String(copy.name.prefix(60))
         return copy
     }
@@ -64,6 +75,8 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     /// Selection identifier for Notion's own styling, which sits alongside the themes in pickers.
     static let originalID = "original"
     var all: [PotionTheme] { PotionTheme.presets + customs }
+    /// Every theme a picker offers, Notion's own styling first.
+    var choices: [PotionTheme] { [PotionTheme.original] + all }
     var activeID: String { enabled ? selected.id : Self.originalID }
     func activate(_ id: String) {
         if id == Self.originalID { enabled = false }
@@ -91,7 +104,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
 
 enum FontCatalog {
     static let families = ["DM Sans", "DM Serif Display", "Lora", "Manrope", "Source Sans 3", "Space Grotesk"]
-    static var urls: [URL] { Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] }
+    static let urls: [URL] = Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? []
     static func register() { urls.forEach { CTFontManagerRegisterFontsForURL($0 as CFURL, .process, nil) } }
     static func url(for family: String) -> URL? {
         let prefix = family.replacingOccurrences(of: " ", with: "").lowercased()
@@ -110,3 +123,6 @@ extension NSColor {
     }
 }
 extension Color { init(hex: String) { self.init(nsColor: NSColor(hex: hex)) } }
+extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self { min(range.upperBound, max(range.lowerBound, self)) }
+}

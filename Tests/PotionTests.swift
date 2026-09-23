@@ -3,6 +3,12 @@ import WebKit
 @testable import Potion
 
 final class PotionTests: XCTestCase {
+    /// Throwaway defaults, removed when the test ends.
+    private func makeDefaults() -> UserDefaults {
+        let suite = "PotionTests.\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
+        return UserDefaults(suiteName: suite)!
+    }
     func testPaletteValidationRejectsCSSAndClampsType() {
         var theme = PotionTheme.presets[0]
         theme.background = "red; } body {display:none}"
@@ -59,9 +65,7 @@ final class PotionTests: XCTestCase {
         XCTAssertTrue(NavigationPolicy.isRestorable(URL(string: "https://app.notion.com/p/me/Page-cf3fbe84")!))
     }
     @MainActor func testSignInFlowPersistsAndSignOutResets() {
-        let suite = "PotionTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
+        let defaults = makeDefaults()
         let flow = AppFlow(defaults: defaults)
         XCTAssertEqual(flow.stage, .welcome)
         flow.signInChanged(true)
@@ -94,9 +98,7 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(NavigationPolicy.withoutQuery(URL(string: "https://app.notion.com/Page-1?pvs=4#abc")!)?.absoluteString, "https://app.notion.com/Page-1")
     }
     @MainActor func testOriginalNotionSelection() {
-        let suite = "PotionTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
+        let defaults = makeDefaults()
         let store = ThemeStore(defaults: defaults)
         store.activate(ThemeStore.originalID)
         XCTAssertFalse(store.enabled)
@@ -106,9 +108,7 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(store.selected.name, "Midnight")
     }
     @MainActor func testSaveEditDeleteAndRestoreTheme() {
-        let suite = "PotionTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
+        let defaults = makeDefaults()
         let store = ThemeStore(defaults: defaults)
         var theme = PotionTheme.presets[2]
         theme.name = "My lavender"
@@ -127,7 +127,7 @@ final class PotionTests: XCTestCase {
     }
     func testAllBundledFontsAndPreviewExist() {
         for family in FontCatalog.families { XCTAssertNotNil(FontCatalog.url(for: family), family) }
-        XCTAssertNotNil(Bundle.main.url(forResource: "Preview", withExtension: "html"))
+        XCTAssertNotNil(Workspace.previewURL)
     }
     @MainActor func testWebKitLiveThemeAndRemoval() async throws {
         let workspace = Workspace()

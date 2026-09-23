@@ -7,10 +7,9 @@ struct RootView: View {
     @ObservedObject var flow: AppFlow
     @StateObject private var tabs = BrowserTabs()
     @StateObject private var appearance = AppearanceState()
-    @AppStorage("potion.tabs") private var savedTabs: String?
 
-    private struct Styling: Equatable { var theme: PotionTheme; var enabled: Bool }
-    private var styling: Styling { Styling(theme: store.selected, enabled: store.enabled && flow.showsThemes) }
+    /// Themes restyle Notion only after sign-in, so the login page always looks like Notion's own.
+    private var styling: ThemeStyling { ThemeStyling(theme: store.selected, enabled: store.enabled && !flow.isOnboarding) }
 
     var body: some View {
         WindowContent(store: store, flow: flow, tabs: tabs, workspace: tabs.current, appearance: appearance)
@@ -24,12 +23,11 @@ struct RootView: View {
             .focusedSceneObject(appearance)
             .task {
                 guard tabs.current.webView.url == nil else { return }
-                if flow.stage != .ready { tabs.current.openLogin() } else { tabs.restore(savedTabs) }
+                if flow.isOnboarding { tabs.current.openLogin() } else { tabs.restore() }
             }
-            .onChange(of: styling, initial: true) { _, styling in tabs.apply(styling.theme, enabled: styling.enabled) }
-            .onChange(of: tabs.snapshot) { _, snapshot in savedTabs = snapshot }
-            .onChange(of: flow.stage, initial: true) { _, stage in tabs.usesWindowLayout = stage == .ready }
-            .onChange(of: flow.stage) { old, stage in
+            .onChange(of: styling, initial: true) { _, styling in tabs.apply(styling) }
+            .onChange(of: flow.stage, initial: true) { old, stage in
+                tabs.usesWindowLayout = stage == .ready
                 switch (old, stage) {
                 case (.welcome, .signIn) where tabs.current.isSignedIn:
                     // Someone who is already signed in goes straight to their workspace.
