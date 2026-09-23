@@ -68,7 +68,7 @@ private struct FeatureRow: View {
 }
 
 struct SignInView: View {
-    @ObservedObject var workspace: Workspace
+    let workspace: Workspace
     @ObservedObject var flow: AppFlow
 
     var body: some View {
@@ -106,7 +106,7 @@ struct SignInView: View {
 
 /// The live Notion web view, framed as a page floating in the onboarding window.
 private struct WebCard: View {
-    @ObservedObject var workspace: Workspace
+    let workspace: Workspace
 
     var body: some View {
         WebViewHost(webView: workspace.webView, cornerRadius: 14)

@@ -1,17 +1,15 @@
 import SwiftUI
 
-/// The theme editor in the Appearance panel. Edits preview live on every tab; Save keeps them and Cancel restores the saved theme.
+/// The theme editor in the Appearance panel. Edits preview live on every tab in the window (through
+/// `AppearanceState.preview`); Save keeps them, and Cancel or closing the editor shows the saved theme again.
 struct ThemeEditor: View {
     let original: PotionTheme
-    @ObservedObject var tabs: BrowserTabs
     @ObservedObject var store: ThemeStore
     @ObservedObject var appearance: AppearanceState
     @State private var draft: PotionTheme
-    @State private var saved = false
 
-    init(original: PotionTheme, tabs: BrowserTabs, store: ThemeStore, appearance: AppearanceState) {
+    init(original: PotionTheme, store: ThemeStore, appearance: AppearanceState) {
         self.original = original
-        self.tabs = tabs
         self.store = store
         self.appearance = appearance
         _draft = State(initialValue: original)
@@ -63,7 +61,6 @@ struct ThemeEditor: View {
                 Button("Cancel") { appearance.editing = nil }
                     .keyboardShortcut(.cancelAction)
                 Button("Save") {
-                    saved = true
                     store.save(draft)
                     appearance.editing = nil
                 }
@@ -73,11 +70,9 @@ struct ThemeEditor: View {
             }
             .padding(16)
         }
-        .onAppear { tabs.preview(draft) }
-        .onChange(of: draft) { _, theme in tabs.preview(theme) }
+        .onChange(of: draft, initial: true) { _, theme in appearance.preview = theme }
         // Choosing a different theme (from the Theme menu) abandons the edit.
         .onChange(of: store.activeID) { _, _ in appearance.editing = nil }
-        .onDisappear { if !saved { tabs.restoreStyling() } }
     }
 
     private func fontPicker(_ title: String, selection: Binding<String>) -> some View {

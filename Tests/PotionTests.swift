@@ -89,8 +89,10 @@ final class PotionTests: XCTestCase {
         appearance.newTheme(from: PotionTheme.presets[0])
         XCTAssertEqual(appearance.editing?.name, "My Paper")
         XCTAssertEqual(appearance.editing?.isCustom, true)
+        appearance.preview = appearance.editing
         appearance.isShown = false
         XCTAssertNil(appearance.editing, "Closing the panel abandons an edit")
+        XCTAssertNil(appearance.preview, "Ending an edit stops previewing it")
     }
     func testTabTitlesAndSavedAddresses() {
         XCTAssertEqual(NavigationPolicy.pageTitle("The 4P Framework | Notion"), "The 4P Framework")

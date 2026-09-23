@@ -8,8 +8,13 @@ struct RootView: View {
     @StateObject private var tabs = BrowserTabs()
     @StateObject private var appearance = AppearanceState()
 
-    /// Themes restyle Notion only after sign-in, so the login page always looks like Notion's own.
-    private var styling: ThemeStyling { ThemeStyling(theme: store.selected, enabled: store.enabled && !flow.isOnboarding) }
+    /// What the window's tabs show. Themes restyle Notion only after sign-in, so the login page always looks like
+    /// Notion's own; while a theme is being edited, its unsaved changes show in place of the saved theme.
+    private var styling: ThemeStyling {
+        if flow.isOnboarding { return ThemeStyling(theme: store.selected, enabled: false) }
+        if let preview = appearance.preview { return ThemeStyling(theme: preview, enabled: true) }
+        return ThemeStyling(theme: store.selected, enabled: store.enabled)
+    }
 
     var body: some View {
         WindowContent(store: store, flow: flow, tabs: tabs, workspace: tabs.current, appearance: appearance)
@@ -50,7 +55,7 @@ private struct WindowContent: View {
     @ObservedObject var store: ThemeStore
     @ObservedObject var flow: AppFlow
     @ObservedObject var tabs: BrowserTabs
-    @ObservedObject var workspace: Workspace
+    @Bindable var workspace: Workspace
     @ObservedObject var appearance: AppearanceState
 
     var body: some View {
@@ -61,7 +66,7 @@ private struct WindowContent: View {
             case .ready: MainView(store: store, tabs: tabs, workspace: workspace, appearance: appearance).transition(.opacity)
             }
         }
-        .focusedSceneObject(workspace)
+        .focusedSceneValue(\.workspace, workspace)
         .onChange(of: workspace.isSignedIn) { _, signedIn in flow.signInChanged(signedIn) }
         .sheet(item: $workspace.authPopup) { popup in
             AuthSheet(popup: popup, workspace: workspace)

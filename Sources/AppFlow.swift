@@ -69,7 +69,10 @@ import SwiftUI
     }
     /// True right after sign-in, while the panel invites the person to pick their first theme.
     @Published private(set) var isChoosingFirstTheme = false
-    @Published var editing: PotionTheme?
+    /// The theme open in the editor, as it was when editing began.
+    @Published var editing: PotionTheme? { didSet { if editing == nil { preview = nil } } }
+    /// The editor's unsaved changes, shown on every tab in the window in place of the saved theme.
+    @Published var preview: PotionTheme?
 
     /// Opens the panel so the first thing people do in their workspace is pick a theme.
     func beginFirstThemeChoice() {

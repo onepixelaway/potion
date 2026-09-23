@@ -83,8 +83,6 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     /// Every theme a picker offers, Notion's own styling first.
     var choices: [PotionTheme] { [PotionTheme.original] + all }
     var activeID: String { enabled ? selected.id : Self.originalID }
-    /// The theme restyling Notion, or nil for Notion's own look.
-    var active: PotionTheme? { enabled ? selected : nil }
     func activate(_ id: String) {
         if id == Self.originalID { enabled = false }
         else if let theme = all.first(where: { $0.id == id }) { select(theme) }
