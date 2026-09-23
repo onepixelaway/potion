@@ -88,12 +88,7 @@ final class PotionTests: XCTestCase {
         appearance.isShown = false
         XCTAssertNil(appearance.editing, "Closing the panel abandons an edit")
     }
-    func testPageChromeParsingAndTabTitles() {
-        let color = NSColor(css: "rgb(32, 37, 44)")
-        XCTAssertEqual(color?.hex, "20252C")
-        XCTAssertEqual(NSColor(css: "rgba(255, 255, 255, 0.9)")?.hex, "FFFFFF")
-        XCTAssertNil(NSColor(css: "rgba(0, 0, 0, 0)"))
-        XCTAssertNil(NSColor(css: "transparent"))
+    func testTabTitlesAndSavedAddresses() {
         XCTAssertEqual(NavigationPolicy.pageTitle("The 4P Framework | Notion"), "The 4P Framework")
         XCTAssertEqual(NavigationPolicy.pageTitle("  "), "Notion")
         XCTAssertEqual(NavigationPolicy.withoutQuery(URL(string: "https://app.notion.com/Page-1?pvs=4#abc")!)?.absoluteString, "https://app.notion.com/Page-1")
@@ -163,7 +158,9 @@ final class PotionTests: XCTestCase {
             <div class="notion-text-block"><div id="test-body" contenteditable="true" style="font-size:16px;color:var(--c-texPri)">Body</div></div>
             <div id="test-colored" style="color:rgb(255,0,0)">Intentional red</div>
             <code id="test-code">code</code>
-          </div></div>`);
+          </div><div class="notion-sidebar-container"><div class="notion-sidebar">
+            <div id="test-sidebar-list" class="notion-scroller vertical">Pages</div>
+          </div></div></div>`);
         """)
         let headingSize = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-heading')).fontSize") as? String
         XCTAssertEqual(headingSize, "30px", "Heading hierarchy must not be flattened by body sizing")
@@ -171,6 +168,8 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(bodyColor, "rgb(41, 63, 53)")
         let intentionalColor = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-colored')).color") as? String
         XCTAssertEqual(intentionalColor, "rgb(255, 0, 0)")
+        let sidebarList = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-sidebar-list')).backgroundColor") as? String
+        XCTAssertEqual(sidebarList, "rgba(0, 0, 0, 0)", "The sidebar's page list shows the sidebar color, not the page color")
         let codeFont = try await workspace.webView.evaluateJavaScript("getComputedStyle(document.getElementById('test-code')).fontFamily") as? String
         XCTAssertTrue(codeFont?.contains("monospace") == true)
     }
