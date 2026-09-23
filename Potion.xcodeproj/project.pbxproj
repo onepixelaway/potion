@@ -1,0 +1,504 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		041D5AEF70186220FDC2A128 /* lora-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4E608990F2FC06042925A95A /* lora-OFL.txt */; };
+		3CFE746198546BB529AAF07F /* DMSans[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5F00D8B4393CA631A143238E /* DMSans[opsz,wght].ttf */; };
+		4D377CF9C1DE74EF368527DC /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DDDE9DF67920D6D9A58B9A /* Workspace.swift */; };
+		5177CF86E1787561D41C3929 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB5F478E94E507867016915D /* ContentView.swift */; };
+		55D59B8FEC5A6F97F82A59EA /* Lora[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 14A7DBCD8E9ADF05221631C9 /* Lora[wght].ttf */; };
+		67E1E3AB427FBF49C84C8D07 /* dmserifdisplay-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 28F3275DC4FCE18EAF10BBFB /* dmserifdisplay-OFL.txt */; };
+		6842A80AB49B7D55CC79A320 /* PotionTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AF883E4FB208E05FD566A36 /* PotionTheme.swift */; };
+		6A297650200444676D6DF97B /* PotionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2392A451FA8309481D04A012 /* PotionApp.swift */; };
+		6C82A6BE6CEA42CDD73F95AE /* dmsans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 288174211C3834F51CDCC243 /* dmsans-OFL.txt */; };
+		8A7EFDBAA31F58AAE956D504 /* SourceSans3[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 58F71218A3146D364A5A1CE3 /* SourceSans3[wght].ttf */; };
+		A07693D1A8966E5CDAE1E4F4 /* Potion.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A4D09618B60BB768F833FED /* Potion.icns */; };
+		A855C90902F12F7D5A576453 /* Manrope[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */; };
+		B0D2C38D68F8AACAD7357843 /* DMSerifDisplay-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */; };
+		B1FA16494C557BD28AD220FF /* Preview.html in Resources */ = {isa = PBXBuildFile; fileRef = 0AC5D733B57EAE4D1C84A082 /* Preview.html */; };
+		CDA620D103F5E14626898AA0 /* ThemeEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112B55E29F5EF615C76B12AF /* ThemeEditor.swift */; };
+		D3F76781E3E348B50E41F45D /* SpaceGrotesk[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */; };
+		DE7CB886CC10F38064C99100 /* manrope-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 02121AF1CD660FDF52116E53 /* manrope-OFL.txt */; };
+		E47A076C24F00248F3A64148 /* ThemeInjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29397D3567753A98E1F9B150 /* ThemeInjection.swift */; };
+		EC1C3005C0347C6DE9A97481 /* spacegrotesk-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 98D138644FDCCF87B42A9A37 /* spacegrotesk-OFL.txt */; };
+		EE4D03A8676C3E26579D777B /* PotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7955BB74DCA58B2FE4AF75 /* PotionTests.swift */; };
+		F4CC5AD979446BBE2D62A78E /* sourcesans3-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3277198A37808B701797157F /* sourcesans3-OFL.txt */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		54D6B43F6F725A4AC063E702 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F51B9F7D0DA0E08799D06B8E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A7A75623D61CE996D1BFC7F4;
+			remoteInfo = Potion;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		02121AF1CD660FDF52116E53 /* manrope-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "manrope-OFL.txt"; sourceTree = "<group>"; };
+		0AC5D733B57EAE4D1C84A082 /* Preview.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Preview.html; sourceTree = "<group>"; };
+		112B55E29F5EF615C76B12AF /* ThemeEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeEditor.swift; sourceTree = "<group>"; };
+		14A7DBCD8E9ADF05221631C9 /* Lora[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lora[wght].ttf"; sourceTree = "<group>"; };
+		1A4D09618B60BB768F833FED /* Potion.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Potion.icns; sourceTree = "<group>"; };
+		2392A451FA8309481D04A012 /* PotionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionApp.swift; sourceTree = "<group>"; };
+		288174211C3834F51CDCC243 /* dmsans-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "dmsans-OFL.txt"; sourceTree = "<group>"; };
+		28F3275DC4FCE18EAF10BBFB /* dmserifdisplay-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "dmserifdisplay-OFL.txt"; sourceTree = "<group>"; };
+		29397D3567753A98E1F9B150 /* ThemeInjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeInjection.swift; sourceTree = "<group>"; };
+		3277198A37808B701797157F /* sourcesans3-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "sourcesans3-OFL.txt"; sourceTree = "<group>"; };
+		3EE5849EBEA4E9480EB9B7A2 /* Potion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Potion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSerifDisplay-Regular.ttf"; sourceTree = "<group>"; };
+		4E608990F2FC06042925A95A /* lora-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lora-OFL.txt"; sourceTree = "<group>"; };
+		4F7955BB74DCA58B2FE4AF75 /* PotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionTests.swift; sourceTree = "<group>"; };
+		58F71218A3146D364A5A1CE3 /* SourceSans3[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceSans3[wght].ttf"; sourceTree = "<group>"; };
+		5CE0A4C45E3E48FFE4CEC579 /* PotionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PotionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5F00D8B4393CA631A143238E /* DMSans[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans[opsz,wght].ttf"; sourceTree = "<group>"; };
+		627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope[wght].ttf"; sourceTree = "<group>"; };
+		67DDDE9DF67920D6D9A58B9A /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
+		8AF883E4FB208E05FD566A36 /* PotionTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionTheme.swift; sourceTree = "<group>"; };
+		97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SpaceGrotesk[wght].ttf"; sourceTree = "<group>"; };
+		98D138644FDCCF87B42A9A37 /* spacegrotesk-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "spacegrotesk-OFL.txt"; sourceTree = "<group>"; };
+		EB5F478E94E507867016915D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		22ACFE4BA01EE630A308674F /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				4F7955BB74DCA58B2FE4AF75 /* PotionTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		38BE312C52F602235822FF10 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				EB5F478E94E507867016915D /* ContentView.swift */,
+				2392A451FA8309481D04A012 /* PotionApp.swift */,
+				8AF883E4FB208E05FD566A36 /* PotionTheme.swift */,
+				112B55E29F5EF615C76B12AF /* ThemeEditor.swift */,
+				29397D3567753A98E1F9B150 /* ThemeInjection.swift */,
+				67DDDE9DF67920D6D9A58B9A /* Workspace.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		5637B9F1DCDFC83715B10A28 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1A4D09618B60BB768F833FED /* Potion.icns */,
+				0AC5D733B57EAE4D1C84A082 /* Preview.html */,
+				B5A67D787866D4BF64820FD3 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AA31895497BBED431BEB9255 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3EE5849EBEA4E9480EB9B7A2 /* Potion.app */,
+				5CE0A4C45E3E48FFE4CEC579 /* PotionTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B5A67D787866D4BF64820FD3 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				288174211C3834F51CDCC243 /* dmsans-OFL.txt */,
+				5F00D8B4393CA631A143238E /* DMSans[opsz,wght].ttf */,
+				28F3275DC4FCE18EAF10BBFB /* dmserifdisplay-OFL.txt */,
+				45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */,
+				4E608990F2FC06042925A95A /* lora-OFL.txt */,
+				14A7DBCD8E9ADF05221631C9 /* Lora[wght].ttf */,
+				02121AF1CD660FDF52116E53 /* manrope-OFL.txt */,
+				627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */,
+				3277198A37808B701797157F /* sourcesans3-OFL.txt */,
+				58F71218A3146D364A5A1CE3 /* SourceSans3[wght].ttf */,
+				98D138644FDCCF87B42A9A37 /* spacegrotesk-OFL.txt */,
+				97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		D4C2436AD48B75C72674F8B8 = {
+			isa = PBXGroup;
+			children = (
+				5637B9F1DCDFC83715B10A28 /* Resources */,
+				38BE312C52F602235822FF10 /* Sources */,
+				22ACFE4BA01EE630A308674F /* Tests */,
+				AA31895497BBED431BEB9255 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		003B53656C0A0CB123DEEA8D /* PotionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5389F509EC3AD117E54CE874 /* Build configuration list for PBXNativeTarget "PotionTests" */;
+			buildPhases = (
+				7166F12769BA57CE7D10A3D6 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				971A33F566A3E60847A053B0 /* PBXTargetDependency */,
+			);
+			name = PotionTests;
+			packageProductDependencies = (
+			);
+			productName = PotionTests;
+			productReference = 5CE0A4C45E3E48FFE4CEC579 /* PotionTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A7A75623D61CE996D1BFC7F4 /* Potion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26D86B0F8F28BE78B4F9D58F /* Build configuration list for PBXNativeTarget "Potion" */;
+			buildPhases = (
+				990F3015581C0374D95EFE86 /* Sources */,
+				96A78237FBBEB6AB27D5B469 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Potion;
+			packageProductDependencies = (
+			);
+			productName = Potion;
+			productReference = 3EE5849EBEA4E9480EB9B7A2 /* Potion.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F51B9F7D0DA0E08799D06B8E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					003B53656C0A0CB123DEEA8D = {
+						ProvisioningStyle = Automatic;
+					};
+					A7A75623D61CE996D1BFC7F4 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E1490195857EC7555D10C6B5 /* Build configuration list for PBXProject "Potion" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D4C2436AD48B75C72674F8B8;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AA31895497BBED431BEB9255 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A7A75623D61CE996D1BFC7F4 /* Potion */,
+				003B53656C0A0CB123DEEA8D /* PotionTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		96A78237FBBEB6AB27D5B469 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3CFE746198546BB529AAF07F /* DMSans[opsz,wght].ttf in Resources */,
+				B0D2C38D68F8AACAD7357843 /* DMSerifDisplay-Regular.ttf in Resources */,
+				55D59B8FEC5A6F97F82A59EA /* Lora[wght].ttf in Resources */,
+				A855C90902F12F7D5A576453 /* Manrope[wght].ttf in Resources */,
+				A07693D1A8966E5CDAE1E4F4 /* Potion.icns in Resources */,
+				B1FA16494C557BD28AD220FF /* Preview.html in Resources */,
+				8A7EFDBAA31F58AAE956D504 /* SourceSans3[wght].ttf in Resources */,
+				D3F76781E3E348B50E41F45D /* SpaceGrotesk[wght].ttf in Resources */,
+				6C82A6BE6CEA42CDD73F95AE /* dmsans-OFL.txt in Resources */,
+				67E1E3AB427FBF49C84C8D07 /* dmserifdisplay-OFL.txt in Resources */,
+				041D5AEF70186220FDC2A128 /* lora-OFL.txt in Resources */,
+				DE7CB886CC10F38064C99100 /* manrope-OFL.txt in Resources */,
+				F4CC5AD979446BBE2D62A78E /* sourcesans3-OFL.txt in Resources */,
+				EC1C3005C0347C6DE9A97481 /* spacegrotesk-OFL.txt in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7166F12769BA57CE7D10A3D6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE4D03A8676C3E26579D777B /* PotionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		990F3015581C0374D95EFE86 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5177CF86E1787561D41C3929 /* ContentView.swift in Sources */,
+				6A297650200444676D6DF97B /* PotionApp.swift in Sources */,
+				6842A80AB49B7D55CC79A320 /* PotionTheme.swift in Sources */,
+				CDA620D103F5E14626898AA0 /* ThemeEditor.swift in Sources */,
+				E47A076C24F00248F3A64148 /* ThemeInjection.swift in Sources */,
+				4D377CF9C1DE74EF368527DC /* Workspace.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		971A33F566A3E60847A053B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A7A75623D61CE996D1BFC7F4 /* Potion */;
+			targetProxy = 54D6B43F6F725A4AC063E702 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2C75C663747AEA501D95C304 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.potion.PotionTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Potion.app/Contents/MacOS/Potion";
+			};
+			name = Debug;
+		};
+		3957CBD151788D97809988D1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		5D47CEDEEE0DF7BD97777403 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		864CA1063EBAD9195CA8C41E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Potion;
+				INFOPLIST_KEY_CFBundleIconFile = Potion.icns;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.potion.mac;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D402B56FABBC29B700866555 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Potion;
+				INFOPLIST_KEY_CFBundleIconFile = Potion.icns;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.potion.mac;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D608C8F2E7B6E4113F3D6428 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.potion.PotionTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Potion.app/Contents/MacOS/Potion";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		26D86B0F8F28BE78B4F9D58F /* Build configuration list for PBXNativeTarget "Potion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				864CA1063EBAD9195CA8C41E /* Debug */,
+				D402B56FABBC29B700866555 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5389F509EC3AD117E54CE874 /* Build configuration list for PBXNativeTarget "PotionTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2C75C663747AEA501D95C304 /* Debug */,
+				D608C8F2E7B6E4113F3D6428 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E1490195857EC7555D10C6B5 /* Build configuration list for PBXProject "Potion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5D47CEDEEE0DF7BD97777403 /* Debug */,
+				3957CBD151788D97809988D1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F51B9F7D0DA0E08799D06B8E /* Project object */;
+}
