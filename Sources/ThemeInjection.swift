@@ -1,10 +1,34 @@
 import Foundation
 
 enum ThemeInjection {
-    private static let fontCSS: String = FontCatalog.families.compactMap { family in
-        guard let url = FontCatalog.url(for: family), let data = try? Data(contentsOf: url) else { return nil }
-        return "@font-face { font-family: '\(family)'; src: url(data:font/ttf;base64,\(data.base64EncodedString())) format('truetype'); font-weight: 100 900; font-display: swap; }"
-    }.joined(separator: "\n")
+    /// Encodes a value as a JavaScript literal, for embedding in injected scripts.
+    private static func jsLiteral<T: Encodable>(_ value: T) -> String {
+        String(data: try! JSONEncoder().encode(value), encoding: .utf8)!
+    }
+
+    /// Runs the rest of an injected script only on Notion's pages and the offline preview.
+    private static let themedPagesOnly = """
+      const domains = \(jsLiteral(NavigationPolicy.notionDomains));
+      if (!(location.protocol === 'file:' || (location.protocol === 'https:' && domains.some(domain => location.hostname === domain || location.hostname.endsWith('.' + domain))))) return;
+    """
+
+    /// Creates or updates one of Potion's style elements, leaving it alone when the CSS is unchanged.
+    private static let putStyle = """
+      const put = (id, css) => {
+        let node = document.getElementById(id);
+        if (!node) { node = document.createElement('style'); node.id = id; (document.head || document.documentElement).appendChild(node); }
+        if (node.textContent !== css) node.textContent = css;
+      };
+    """
+
+    /// The bundled fonts, embedded once. Installed as its own user script so theme changes never re-encode them.
+    static let fontScript: String = {
+        let css = FontCatalog.families.compactMap { family -> String? in
+            guard let url = FontCatalog.url(for: family), let data = try? Data(contentsOf: url) else { return nil }
+            return "@font-face { font-family: '\(family)'; src: url(data:font/ttf;base64,\(data.base64EncodedString())) format('truetype'); font-weight: 100 900; font-display: swap; }"
+        }.joined(separator: "\n")
+        return "(() => {\n\(themedPagesOnly)\n  window.__potionFonts = \(jsLiteral(css));\n})();"
+    }()
 
     static func css(for input: PotionTheme) -> String {
         let t = input.validated
@@ -23,11 +47,9 @@ enum ThemeInjection {
         .notion-frame, .notion-scroller.vertical, .notion-page-content, .notion-topbar { background-color: var(--potion-bg) !important; }
         .notion-sidebar-container, .notion-sidebar { background-color: var(--potion-surface) !important; }
         .notion-sidebar-container .notion-scroller.vertical { background-color: transparent !important; }
-        .notion-page-content { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
-        .notion-text-block [contenteditable=true], .notion-bulleted_list-block [contenteditable=true], .notion-numbered_list-block [contenteditable=true], .notion-to_do-block [contenteditable=true] { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
+        .notion-page-content, .notion-text-block [contenteditable=true], .notion-bulleted_list-block [contenteditable=true], .notion-numbered_list-block [contenteditable=true], .notion-to_do-block [contenteditable=true] { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
         .notion-page-block [contenteditable=true], .notion-header-block [contenteditable=true], .notion-sub_header-block [contenteditable=true], .notion-sub_sub_header-block [contenteditable=true], .potion-preview h1, .potion-preview h2, .potion-preview h3 { font-family: '\(t.headingFont)', serif !important; }
         .notion-page-content a, .potion-preview a { color: var(--potion-accent) !important; }
-        .notion-app-inner { color: var(--potion-text) !important; }
         .notion-page-content [style*="color: rgb(55, 53, 47)"], .notion-page-content [style*="color: rgba(255, 255, 255, 0.81)"] { color: var(--potion-text) !important; }
         .notion-code-block, .notion-code-block *, code, pre { font-family: ui-monospace, SFMono-Regular, monospace !important; }
         ::selection { background: #\(t.accent)40; }
@@ -35,25 +57,16 @@ enum ThemeInjection {
         """
     }
 
-    static func script(theme: PotionTheme, enabled: Bool, includeFonts: Bool) -> String {
-        let css = enabled ? css(for: theme) : ""
-        let payload: [String: String] = ["css": css, "fonts": includeFonts ? fontCSS : ""]
-        let json = String(data: try! JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]), encoding: .utf8)!
-        return """
+    static func script(theme: PotionTheme, enabled: Bool) -> String {
+        """
         (() => {
-          const domains = \(String(data: try! JSONEncoder().encode(NavigationPolicy.notionDomains), encoding: .utf8)!);
-          if (!(location.protocol === 'file:' || (location.protocol === 'https:' && domains.some(domain => location.hostname === domain || location.hostname.endsWith('.' + domain))))) return;
-          const payload = \(json);
-          if (payload.fonts) window.__potionFonts = payload.fonts;
+        \(themedPagesOnly)
+          const css = \(jsLiteral(enabled ? css(for: theme) : ""));
+        \(putStyle)
           const apply = () => {
             if (!document.documentElement) return;
-            const put = (id, css) => {
-              let node = document.getElementById(id);
-              if (!node) { node = document.createElement('style'); node.id = id; (document.head || document.documentElement).appendChild(node); }
-              if (node.textContent !== css) node.textContent = css;
-            };
             if (window.__potionFonts) put('potion-fonts', window.__potionFonts);
-            put('potion-theme', payload.css);
+            put('potion-theme', css);
           };
           window.__potionApply = apply;
           apply();
@@ -94,7 +107,8 @@ extension ThemeInjection {
     static let chromeScript = """
     (() => {
       if (window.__potionChromePost || !window.webkit?.messageHandlers?.\(chromeMessage)) return;
-      const layoutCSS = \(String(data: try! JSONEncoder().encode(layoutCSS), encoding: .utf8)!);
+      const layoutCSS = \(jsLiteral(layoutCSS));
+    \(putStyle)
       const tag = () => {
         const sidebar = document.querySelector('.notion-sidebar');
         let row = sidebar && sidebar.querySelector('[role=button]');
@@ -122,10 +136,7 @@ extension ThemeInjection {
         };
         const listener = document.querySelector('.notion-cursor-listener');
         if (listener) panels(listener, 0);
-        let style = document.getElementById('potion-layout');
-        if (!style) { style = document.createElement('style'); style.id = 'potion-layout'; (document.head || document.documentElement).appendChild(style); }
-        const css = window.__potionLayout ? layoutCSS : '';
-        if (style.textContent !== css) style.textContent = css;
+        put('potion-layout', window.__potionLayout ? layoutCSS : '');
       };
       const inboxCount = () => {
         const button = document.querySelector('.notion-sidebar [role=button][aria-label="Inbox"]');
@@ -152,7 +163,7 @@ extension ThemeInjection {
       };
       const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; post(); }); } };
       window.__potionChromePost = post;
-      window.addEventListener('resize', post);
+      window.addEventListener('resize', schedule);
       new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
       setInterval(post, 1000);
       post();
@@ -163,7 +174,7 @@ extension ThemeInjection {
     /// Presses one of the buttons in Notion's sidebar row, which stay in the page while the sidebar is collapsed.
     static func pressSidebarButton(_ label: String) -> String {
         let selector = ".notion-sidebar [role=button][aria-label=\"\(label)\"]"
-        return "document.querySelector(\(String(data: try! JSONEncoder().encode(selector), encoding: .utf8)!))?.click();"
+        return "document.querySelector(\(jsLiteral(selector)))?.click();"
     }
 
     /// Sends Notion the same key event as its ⌘\ shortcut, which shows or hides its sidebar.
@@ -209,6 +220,8 @@ enum NavigationPolicy {
         components?.fragment = nil
         return components?.url
     }
+    /// Pages that always load in Potion: Notion, the identity providers it signs in with, and blank pages.
+    static func isTrusted(_ url: URL) -> Bool { url.absoluteString == "about:blank" || isNotion(url) || isAuthentication(url) }
     static func canOpenExternally(_ url: URL) -> Bool { ["https", "http", "mailto"].contains(url.scheme?.lowercased() ?? "") }
 
     /// True for pages of a signed-in workspace, which is how Potion knows sign-in has finished.
@@ -230,7 +243,7 @@ enum NavigationPolicy {
     /// Main-window navigations. Notion and sign-in pages load in place; links people click to other sites open
     /// in their browser. Redirects away from Notion (enterprise SSO) stay in place so sign-in can complete.
     static func decision(for url: URL, isLinkClick: Bool, from current: URL?) -> NavigationDecision {
-        if url.absoluteString == "about:blank" || isNotion(url) || isAuthentication(url) { return .allow }
+        if isTrusted(url) { return .allow }
         guard url.scheme?.lowercased() == "https" else { return canOpenExternally(url) ? .openExternally : .cancel }
         let leavingNotion = current.map(isNotion) ?? true
         return isLinkClick && leavingNotion ? .openExternally : .allow
@@ -238,7 +251,7 @@ enum NavigationPolicy {
     /// Sign-in popup navigations. The first page must belong to Notion or a known identity provider; after that the
     /// provider may redirect wherever its sign-in flow needs to go.
     static func popupDecision(for url: URL, from current: URL?) -> NavigationDecision {
-        if url.absoluteString == "about:blank" || isNotion(url) || isAuthentication(url) { return .allow }
+        if isTrusted(url) { return .allow }
         let started = current.map { $0.absoluteString != "about:blank" } ?? false
         if started && url.scheme?.lowercased() == "https" { return .allow }
         return canOpenExternally(url) ? .openExternally : .cancel

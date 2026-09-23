@@ -87,9 +87,7 @@ private struct WindowHeader: View {
             HStack(spacing: 2) {
                 HeaderIconButton(symbol: "arrow.clockwise", help: "Reload this page (⌘R)") { workspace.reload() }
                 HeaderIconButton(symbol: "safari", help: "Open this page in your browser", isEnabled: workspace.canOpenInBrowser) { workspace.openInBrowser() }
-                HeaderIconButton(symbol: "slider.horizontal.3", help: "Show or hide themes (⌃⌘I)", isOn: appearance.isShown) {
-                    withAnimation(.smooth) { appearance.isShown.toggle() }
-                }
+                HeaderIconButton(symbol: "slider.horizontal.3", help: "Show or hide themes (⌃⌘I)", isOn: appearance.isShown) { appearance.toggle() }
             }
             .padding(.horizontal, 8)
         }
@@ -263,14 +261,14 @@ private struct AppearancePanel: View {
                 }
                 grid([PotionTheme.original] + PotionTheme.presets) { theme in
                     if !theme.isOriginal {
-                        Button("Customize…") { store.select(theme); appearance.customize(theme) }
+                        Button("Customize…") { edit(theme) }
                     }
                 }
                 .padding(.top, 20)
                 if !store.customs.isEmpty {
                     Text("My Themes").font(.headline).padding(.top, 28)
                     grid(store.customs) { theme in
-                        Button("Edit…") { store.select(theme); appearance.customize(theme) }
+                        Button("Edit…") { edit(theme) }
                         Button("Duplicate") { appearance.newTheme(from: theme) }
                         Divider()
                         Button("Delete", role: .destructive) { withAnimation { store.delete(theme) } }
@@ -292,6 +290,11 @@ private struct AppearancePanel: View {
             }
             .padding(16)
         }
+    }
+
+    private func edit(_ theme: PotionTheme) {
+        store.select(theme)
+        appearance.customize(theme)
     }
 
     private func grid(_ themes: [PotionTheme], @ViewBuilder menu: @escaping (PotionTheme) -> some View) -> some View {

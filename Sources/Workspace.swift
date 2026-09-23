@@ -1,6 +1,5 @@
 import SwiftUI
 import WebKit
-import UniformTypeIdentifiers
 
 /// A sign-in window a page opened with `window.open`, shown as a sheet.
 struct AuthPopup: Identifiable {
@@ -11,6 +10,8 @@ struct AuthPopup: Identifiable {
 @MainActor final class Workspace: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler {
     static let loginURL = URL(string: "https://app.notion.com/login")!
     static let homeURL = URL(string: "https://app.notion.com/")!
+    /// The offline sample page. Used to verify theme rendering without a Notion account.
+    static let previewURL = Bundle.main.url(forResource: "Preview", withExtension: "html")
     private static let lastURLKey = "potion.lastNotionURL"
 
     let webView: WKWebView
@@ -36,7 +37,9 @@ struct AuthPopup: Identifiable {
     }
     private var themeScript: String?
     /// The current workspace page, restored per window and tab on relaunch.
-    @Published private(set) var pageURL: URL?
+    @Published private(set) var pageURL: URL? { didSet { onPageChange?() } }
+    /// Called after `pageURL` changes. Set by the window hosting this workspace.
+    var onPageChange: (() -> Void)?
     /// Opens a Notion page in a new tab. Set by the window hosting this workspace.
     var onOpenTab: ((URL) -> Void)?
     private var observations: [NSKeyValueObservation] = []
@@ -56,14 +59,10 @@ struct AuthPopup: Identifiable {
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
         webView.setValue(false, forKey: "drawsBackground")
-        observations = [
-            webView.observe(\.isLoading) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
-            webView.observe(\.estimatedProgress) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
-            webView.observe(\.canGoBack) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
-            webView.observe(\.canGoForward) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
-            webView.observe(\.title) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
-            webView.observe(\.url) { [weak self] _, _ in Task { @MainActor in self?.updateState() } },
-        ]
+        func watch<Value>(_ keyPath: KeyPath<WKWebView, Value>) -> NSKeyValueObservation {
+            webView.observe(keyPath) { [weak self] _, _ in Task { @MainActor in self?.updateState() } }
+        }
+        observations = [watch(\.isLoading), watch(\.estimatedProgress), watch(\.canGoBack), watch(\.canGoForward), watch(\.title), watch(\.url)]
     }
 
     private static var safariApplicationName: String {
@@ -72,9 +71,11 @@ struct AuthPopup: Identifiable {
     }
 
     func apply(_ theme: PotionTheme, enabled: Bool) {
-        themeScript = ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: true)
+        let script = ThemeInjection.script(theme: theme, enabled: enabled)
+        guard script != themeScript else { return }
+        themeScript = script
         installScripts()
-        webView.evaluateJavaScript(ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: false) + ThemeInjection.chromeRefresh, completionHandler: nil)
+        webView.evaluateJavaScript(script + ThemeInjection.chromeRefresh, completionHandler: nil)
     }
     private func installScripts() {
         let controller = webView.configuration.userContentController
@@ -82,6 +83,7 @@ struct AuthPopup: Identifiable {
         controller.addUserScript(WKUserScript(source: ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript,
                                               injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         if let themeScript {
+            controller.addUserScript(WKUserScript(source: ThemeInjection.fontScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
             controller.addUserScript(WKUserScript(source: themeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         }
     }
@@ -95,9 +97,9 @@ struct AuthPopup: Identifiable {
     func newPage() { webView.evaluateJavaScript(ThemeInjection.pressSidebarButton("New page"), completionHandler: nil) }
     var displayTitle: String { NavigationPolicy.pageTitle(title) }
 
-    /// Loads the offline sample page. Used to verify theme rendering without a Notion account.
+    /// Loads the offline sample page.
     func showPreview() {
-        guard let url = Bundle.main.url(forResource: "Preview", withExtension: "html") else { error = "The preview could not be found."; return }
+        guard let url = Self.previewURL else { error = "The preview could not be found."; return }
         error = nil
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
     }
@@ -126,10 +128,7 @@ struct AuthPopup: Identifiable {
     }
     /// Removes every cookie and cache Potion's web views have stored. All windows share this data store.
     static func removeWebsiteData() async {
-        let store = WKWebsiteDataStore.default()
-        let types = WKWebsiteDataStore.allWebsiteDataTypes()
-        let records = await store.dataRecords(ofTypes: types)
-        await store.removeData(ofTypes: types, for: records)
+        await WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
         UserDefaults.standard.removeObject(forKey: lastURLKey)
     }
     func returnToLogin() {
@@ -141,16 +140,19 @@ struct AuthPopup: Identifiable {
     func closeAuthPopup() {
         guard let popup = authPopup?.webView else { return }
         popup.stopLoading()
-        popups.removeAll { $0 === popup }
-        authPopup = nil
+        webViewDidClose(popup)
     }
 
     private func updateState() {
-        isLoading = webView.isLoading
-        progress = webView.estimatedProgress
-        canGoBack = webView.canGoBack
-        canGoForward = webView.canGoForward
-        title = webView.title ?? ""
+        // Only changed values are assigned, so a progress tick doesn't redraw everything observing the workspace.
+        func update<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<Workspace, Value>, _ value: Value) {
+            if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
+        }
+        update(\.isLoading, webView.isLoading)
+        update(\.progress, webView.estimatedProgress)
+        update(\.canGoBack, webView.canGoBack)
+        update(\.canGoForward, webView.canGoForward)
+        update(\.title, webView.title ?? "")
         guard let url = webView.url, !url.isFileURL else { return }
         // Notion is a single-page app, so the URL is observed directly rather than waiting for didFinish.
         let signedIn = NavigationPolicy.isWorkspacePage(url)
@@ -192,7 +194,7 @@ struct AuthPopup: Identifiable {
         if action.shouldPerformDownload { decisionHandler(.download); return }
         if action.targetFrame?.isMainFrame == false { decisionHandler(.allow); return }
         if url.isFileURL {
-            decisionHandler(url == Bundle.main.url(forResource: "Preview", withExtension: "html") ? .allow : .cancel)
+            decisionHandler(url == Self.previewURL ? .allow : .cancel)
             return
         }
         let isPopup = webView !== self.webView
@@ -232,7 +234,7 @@ struct AuthPopup: Identifiable {
             if let onOpenTab { onOpenTab(url) } else { self.webView.load(action.request) }
             return nil
         }
-        guard NavigationPolicy.isNotion(url) || NavigationPolicy.isAuthentication(url) || url.absoluteString == "about:blank" || url.absoluteString.isEmpty else {
+        guard NavigationPolicy.isTrusted(url) || url.absoluteString.isEmpty else {
             if NavigationPolicy.canOpenExternally(url) { NSWorkspace.shared.open(url) }
             return nil
         }

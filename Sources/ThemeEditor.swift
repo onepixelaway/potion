@@ -8,17 +8,13 @@ struct ThemeEditor: View {
     @ObservedObject var appearance: AppearanceState
     @State private var draft: PotionTheme
     @State private var saved = false
-    private let initial: PotionTheme
 
     init(original: PotionTheme, tabs: BrowserTabs, store: ThemeStore, appearance: AppearanceState) {
         self.original = original
         self.tabs = tabs
         self.store = store
         self.appearance = appearance
-        var theme = original
-        if !theme.isCustom { theme.name = "My \(theme.name)" }
-        initial = theme
-        _draft = State(initialValue: theme)
+        _draft = State(initialValue: original)
     }
     private var isNew: Bool { !store.customs.contains { $0.id == original.id } }
     private var canSave: Bool { !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -33,18 +29,9 @@ struct ThemeEditor: View {
             Section("Typography") {
                 fontPicker("Headings", selection: $draft.headingFont)
                 fontPicker("Body", selection: $draft.bodyFont)
-                LabeledContent("Text Size") {
-                    HStack {
-                        Slider(value: $draft.fontSize, in: 13...22, step: 1).accessibilityLabel("Text size")
-                        Text("\(Int(draft.fontSize)) pt").monospacedDigit().foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
-                    }
-                }
-                LabeledContent("Line Spacing") {
-                    HStack {
-                        Slider(value: $draft.lineHeight, in: 1.3...2, step: 0.05).accessibilityLabel("Line spacing")
-                        Text(draft.lineHeight.formatted(.number.precision(.fractionLength(2)))).monospacedDigit().foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
-                    }
-                }
+                slider("Text Size", value: $draft.fontSize, in: PotionTheme.fontSizeRange, step: 1, label: "\(Int(draft.fontSize)) pt")
+                slider("Line Spacing", value: $draft.lineHeight, in: PotionTheme.lineHeightRange, step: 0.05,
+                       label: draft.lineHeight.formatted(.number.precision(.fractionLength(2))))
             }
             Section("Colors") {
                 colorPicker("Page", hex: $draft.background)
@@ -71,8 +58,8 @@ struct ThemeEditor: View {
         .formStyle(.grouped)
         .bottomBar {
             HStack {
-                Button("Revert") { draft = initial }
-                    .disabled(draft == initial)
+                Button("Revert") { draft = original }
+                    .disabled(draft == original)
                 Spacer()
                 Button("Cancel") { appearance.editing = nil }
                     .keyboardShortcut(.cancelAction)
@@ -97,6 +84,14 @@ struct ThemeEditor: View {
     private func fontPicker(_ title: String, selection: Binding<String>) -> some View {
         Picker(title, selection: selection) {
             ForEach(FontCatalog.families, id: \.self) { Text($0).tag($0) }
+        }
+    }
+    private func slider(_ title: String, value: Binding<Double>, in range: ClosedRange<Double>, step: Double, label: String) -> some View {
+        LabeledContent(title) {
+            HStack {
+                Slider(value: value, in: range, step: step).accessibilityLabel(title)
+                Text(label).monospacedDigit().foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
+            }
         }
     }
     private func colorPicker(_ title: String, hex: Binding<String>) -> some View {

@@ -1,5 +1,4 @@
 import SwiftUI
-import WebKit
 
 /// Where the person is in Potion, shared by every window: first-run onboarding (welcome → sign in) or the workspace.
 @MainActor final class AppFlow: ObservableObject {
@@ -18,8 +17,6 @@ import WebKit
     }
 
     var isOnboarding: Bool { stage != .ready }
-    /// Themes restyle Notion only after sign-in, so the login page always looks like Notion's own.
-    var showsThemes: Bool { stage == .ready }
 
     func go(to stage: Stage) {
         withAnimation(.smooth(duration: 0.35)) { self.stage = stage }
@@ -87,15 +84,16 @@ import WebKit
             withAnimation(.smooth) { isShown = false }
         }
     }
+    func toggle() {
+        withAnimation(.smooth) { isShown.toggle() }
+    }
+    /// Edits a custom theme in place, or a preset as a new custom theme.
     func customize(_ theme: PotionTheme) {
         isShown = true
-        editing = theme
+        editing = theme.isCustom ? theme : theme.customCopy()
     }
     func newTheme(from theme: PotionTheme) {
-        var copy = theme
-        copy.id = UUID().uuidString
-        copy.name = "My \(theme.name)"
-        copy.isCustom = true
-        customize(copy)
+        isShown = true
+        editing = theme.customCopy()
     }
 }
