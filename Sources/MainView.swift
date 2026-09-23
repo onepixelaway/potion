@@ -7,15 +7,17 @@ struct MainView: View {
     @ObservedObject var appearance: AppearanceState
 
     var body: some View {
-        GeometryReader { proxy in
+        // Notion fills the window up to the title bar, as in its own app; Potion's tab row sits over the page column.
+        ZStack(alignment: .topLeading) {
             BrowserView(store: store, workspace: workspace)
-                .background { HeaderBackdrop(chrome: workspace.chrome, fallback: pageFallback).ignoresSafeArea() }
-                // The title names the window in the Window menu; the header itself shows tabs, as Notion's does.
-                .navigationTitle(workspace.displayTitle)
-                .toolbar(removing: .title)
-                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-                .modifier(HeaderToolbar(tabs: tabs, workspace: workspace, appearance: appearance, contentWidth: proxy.size.width))
+            WindowHeader(tabs: tabs, workspace: workspace, appearance: appearance)
         }
+        .ignoresSafeArea(edges: .top)
+        // The title names the window in the Window menu; the header itself shows tabs.
+        .navigationTitle(workspace.displayTitle)
+        .toolbar(removing: .title)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .modifier(TitleBarHeight())
         // Header controls over the page follow the theme's light or dark appearance.
         .preferredColorScheme(store.enabled ? (store.selected.isDark ? .dark : .light) : nil)
         .inspector(isPresented: $appearance.isShown) {
@@ -23,90 +25,128 @@ struct MainView: View {
                 .inspectorColumnWidth(min: 290, ideal: 310, max: 380)
         }
     }
+}
 
-    private var pageFallback: Color {
-        store.enabled ? Color(hex: store.selected.background) : Color(nsColor: .textBackgroundColor)
+/// Gives the window an empty compact toolbar, which makes the title bar tall enough to center the traffic lights in
+/// Notion's sidebar row. It has no items, so every click along the title bar reaches the page or Potion's controls.
+private struct TitleBarHeight: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(WindowAccessor { window in
+            if window.toolbar == nil { window.toolbar = NSToolbar(identifier: "potion.titlebar") }
+            window.toolbarStyle = .unifiedCompact
+        })
     }
 }
 
-/// The header, laid out like Notion's app: sidebar toggle over the sidebar; back, forward and tabs from the
-/// sidebar's edge; page actions on the right. Flat controls, without toolbar glass, so it reads as part of Notion.
-private struct HeaderToolbar: ViewModifier {
+/// The title bar row, laid out like Notion's app. With the sidebar open, Notion's own sidebar row fills the space
+/// over it: the collapse button just after the traffic lights, inbox and new page at its right. With the sidebar
+/// collapsed, Potion's buttons stand in for those. Then come back and forward, the tabs, and the page actions.
+private struct WindowHeader: View {
     @ObservedObject var tabs: BrowserTabs
     @ObservedObject var workspace: Workspace
     @ObservedObject var appearance: AppearanceState
-    let contentWidth: CGFloat
-    @State private var stripX: CGFloat = 80
 
-    /// Room for the actions group on the right.
-    private let actionsWidth: CGFloat = 112
+    private let buttonX = ThemeInjection.sidebarButtonX
+    /// Notion's inbox and new-page buttons, with the row's end padding, at the right of its sidebar row.
+    private let sidebarTrailingWidth: CGFloat = 72
 
-    func body(content: Content) -> some View {
-        if #available(macOS 26, *) {
-            content.toolbar {
-                ToolbarItem(placement: .navigation) { strip }.sharedBackgroundVisibility(.hidden)
-                ToolbarSpacer(.flexible)
-                ToolbarItem(placement: .primaryAction) { actions }.sharedBackgroundVisibility(.hidden)
+    var body: some View {
+        let sidebarWidth = workspace.sidebarWidth
+        HStack(spacing: 0) {
+            if sidebarWidth > 0 {
+                // Empty stretches of Notion's row move the window; its buttons get the clicks.
+                WindowDragArea().frame(width: buttonX - 2)
+                Color.clear.frame(width: 32).allowsHitTesting(false)
+                WindowDragArea().frame(width: max(0, sidebarWidth - buttonX - 30 - sidebarTrailingWidth))
+                Color.clear.frame(width: min(sidebarWidth, sidebarTrailingWidth)).allowsHitTesting(false)
+            } else {
+                HStack(spacing: 8) {
+                    HeaderIconButton(symbol: "sidebar.left", help: "Open sidebar (⌘\\)") { workspace.toggleSidebar() }
+                    HeaderIconButton(symbol: "tray", help: "Inbox", badge: workspace.inboxCount) { workspace.openInbox() }
+                    HeaderIconButton(symbol: "square.and.pencil", help: "New page") { workspace.newPage() }
+                }
+                .padding(.leading, buttonX)
+                .frame(maxHeight: .infinity)
+                .background(WindowDragArea())
+                .overlay(alignment: .bottom) { HeaderRule(axis: .horizontal) }
             }
-        } else {
-            content.toolbar {
-                ToolbarItem(placement: .navigation) { strip }
-                ToolbarItem(placement: .primaryAction) { actions }
-            }
+            pageRow
         }
+        .frame(height: ThemeInjection.headerHeight)
     }
 
-    private var strip: some View {
-        let sidebarGap = max(6, workspace.chrome.sidebarWidth + 6 - stripX - 30)
-        return HStack(spacing: 2) {
-            WindowXReader(x: $stripX).frame(width: 0, height: 0)
-            HeaderIconButton(symbol: "sidebar.left", help: "Show or hide Notion’s sidebar (⌘\\)") { workspace.toggleSidebar() }
-            Color.clear.frame(width: sidebarGap, height: 1)
-            HeaderIconButton(symbol: "chevron.left", help: "Back (⌘[)", isEnabled: workspace.canGoBack) { workspace.goBack() }
-            HeaderIconButton(symbol: "chevron.right", help: "Forward (⌘])", isEnabled: workspace.canGoForward) { workspace.goForward() }
-            TabStrip(tabs: tabs, width: max(120, contentWidth - stripX - sidebarGap - 130 - actionsWidth))
-                .padding(.leading, 6)
-        }
-        .frame(height: 30)
-    }
-
-    private var actions: some View {
-        HStack(spacing: 2) {
-            HeaderIconButton(symbol: "arrow.clockwise", help: "Reload this page (⌘R)") { workspace.reload() }
-            HeaderIconButton(symbol: "safari", help: "Open this page in your browser", isEnabled: workspace.canOpenInBrowser) { workspace.openInBrowser() }
-            HeaderIconButton(symbol: "slider.horizontal.3", help: "Show or hide themes (⌃⌘I)", isOn: appearance.isShown) {
-                withAnimation(.smooth) { appearance.isShown.toggle() }
+    private var pageRow: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 4) {
+                HeaderIconButton(symbol: "chevron.left", help: "Back (⌘[)", isEnabled: workspace.canGoBack) { workspace.goBack() }
+                HeaderIconButton(symbol: "chevron.right", help: "Forward (⌘])", isEnabled: workspace.canGoForward) { workspace.goForward() }
             }
+            .padding(.horizontal, 8)
+            HeaderRule(axis: .vertical)
+            TabStrip(tabs: tabs)
+            HStack(spacing: 2) {
+                HeaderIconButton(symbol: "arrow.clockwise", help: "Reload this page (⌘R)") { workspace.reload() }
+                HeaderIconButton(symbol: "safari", help: "Open this page in your browser", isEnabled: workspace.canOpenInBrowser) { workspace.openInBrowser() }
+                HeaderIconButton(symbol: "slider.horizontal.3", help: "Show or hide themes (⌃⌘I)", isOn: appearance.isShown) {
+                    withAnimation(.smooth) { appearance.isShown.toggle() }
+                }
+            }
+            .padding(.horizontal, 8)
         }
-        .frame(height: 30)
+        .frame(maxHeight: .infinity)
+        .background(WindowDragArea())
+        .overlay(alignment: .bottom) { HeaderRule(axis: .horizontal) }
     }
 }
 
-/// Notion-style tabs: flat and equal width, with a close button on hover, then a “+”.
+/// The hairlines that divide the title bar row, as in Notion's app.
+private struct HeaderRule: View {
+    let axis: Axis
+    var body: some View {
+        Rectangle()
+            .fill(.primary.opacity(0.09))
+            .frame(width: axis == .vertical ? 1 : nil, height: axis == .horizontal ? 1 : nil)
+    }
+}
+
+/// Moves the window when dragged, and zooms or minimizes it on double-click as the system setting asks.
+private struct WindowDragArea: View {
+    var body: some View {
+        Color.clear
+            .contentShape(.rect)
+            .gesture(WindowDragGesture())
+            .allowsWindowActivationEvents(true)
+            .onTapGesture(count: 2) {
+                guard let window = NSApp.keyWindow else { return }
+                switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
+                case "Minimize": window.miniaturize(nil)
+                case "None": break
+                default: window.performZoom(nil)
+                }
+            }
+    }
+}
+
+/// Notion-style tabs: full-height cells divided by hairlines, a close button on hover, then a “+”.
 private struct TabStrip: View {
     @ObservedObject var tabs: BrowserTabs
-    let width: CGFloat
 
     var body: some View {
-        let tabWidth = min(190, max(64, (width - 34) / CGFloat(tabs.tabs.count)))
-        HStack(spacing: 0) {
-            ForEach(Array(tabs.tabs.enumerated()), id: \.element.id) { index, tab in
-                let isSelected = tab === tabs.current
-                let nextIsSelected = index + 1 < tabs.tabs.count && tabs.tabs[index + 1] === tabs.current
-                TabItem(workspace: tab, isSelected: isSelected, tabs: tabs)
-                    .frame(width: tabWidth)
-                    .overlay(alignment: .trailing) {
-                        if !isSelected && !nextIsSelected && index < tabs.tabs.count - 1 {
-                            Rectangle().fill(.primary.opacity(0.1)).frame(width: 1, height: 14)
-                        }
-                    }
+        GeometryReader { proxy in
+            let tabWidth = min(170, max(72, (proxy.size.width - 44) / CGFloat(tabs.tabs.count)))
+            HStack(spacing: 0) {
+                ForEach(tabs.tabs) { tab in
+                    TabItem(workspace: tab, isSelected: tab === tabs.current, tabs: tabs)
+                        .frame(width: tabWidth)
+                    HeaderRule(axis: .vertical)
+                }
+                HeaderIconButton(symbol: "plus", help: "New tab (⌘T)") { tabs.newTab() }
+                    .padding(.horizontal, 6)
+                // Empty space after the tabs moves the window, as in any title bar.
+                WindowDragArea()
             }
-            HeaderIconButton(symbol: "plus", help: "New tab (⌘T)") { tabs.newTab() }
-                .padding(.leading, 4)
-            Spacer(minLength: 0)
+            .animation(.snappy(duration: 0.2), value: tabs.tabs.map(\.id))
         }
-        .frame(width: width, alignment: .leading)
-        .animation(.snappy(duration: 0.2), value: tabs.tabs.map(\.id))
     }
 }
 
@@ -119,13 +159,13 @@ private struct TabItem: View {
     var body: some View {
         ZStack(alignment: .trailing) {
             Text(workspace.displayTitle)
-                .font(.system(size: 12.5, weight: isSelected ? .medium : .regular))
+                .font(.system(size: 13, weight: isSelected ? .medium : .regular))
                 .foregroundStyle(isSelected ? .primary : .secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 10)
-                .padding(.trailing, isHovering ? 26 : 8)
+                .padding(.leading, 14)
+                .padding(.trailing, isHovering ? 30 : 10)
             if isHovering {
                 Button { tabs.close(workspace) } label: {
                     Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).frame(width: 18, height: 18)
@@ -133,12 +173,12 @@ private struct TabItem: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .help("Close tab (⌘W)")
             }
         }
-        .frame(height: 28)
-        .background(Color.primary.opacity(isSelected ? 0.09 : (isHovering ? 0.045 : 0)), in: .rect(cornerRadius: 7))
+        .frame(maxHeight: .infinity)
+        .background(Color.primary.opacity(isSelected ? 0.05 : (isHovering ? 0.025 : 0)))
         .contentShape(.rect)
         .onTapGesture { tabs.select(workspace) }
         .onHover { isHovering = $0 }
@@ -161,15 +201,27 @@ private struct HeaderIconButton: View {
     let help: String
     var isEnabled = true
     var isOn = false
+    var badge = 0
     let action: () -> Void
     @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 15, weight: .regular))
                 .frame(width: 28, height: 28)
                 .background(.primary.opacity(isOn ? 0.1 : (isHovering && isEnabled ? 0.07 : 0)), in: .rect(cornerRadius: 6))
+                .overlay(alignment: .topTrailing) {
+                    if badge > 0 {
+                        Text(badge > 99 ? "99+" : "\(badge)")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 4)
+                            .frame(minWidth: 16, minHeight: 16)
+                            .background(Color(red: 0.86, green: 0.37, blue: 0.32), in: .capsule)
+                            .offset(x: 5, y: -4)
+                    }
+                }
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -178,27 +230,7 @@ private struct HeaderIconButton: View {
         .disabled(!isEnabled)
         .onHover { isHovering = $0 }
         .help(help)
-        .accessibilityLabel(help)
-    }
-}
-
-/// Paints the window header in Notion's own colors: the sidebar's color above Notion's sidebar, the page's color
-/// above the page, so the header and Notion read as one surface as they do in Notion's app.
-private struct HeaderBackdrop: View {
-    let chrome: PageChrome
-    let fallback: Color
-
-    var body: some View {
-        let page = chrome.pageColor.map(Color.init(nsColor:)) ?? fallback
-        HStack(spacing: 0) {
-            if chrome.sidebarWidth > 0 {
-                (chrome.sidebarColor.map(Color.init(nsColor:)) ?? page)
-                    .frame(width: chrome.sidebarWidth)
-                    .overlay(alignment: .trailing) { Rectangle().fill(.primary.opacity(0.07)).frame(width: 1) }
-            }
-            page
-        }
-        .animation(.smooth(duration: 0.2), value: chrome)
+        .accessibilityLabel(badge > 0 ? "\(help), \(badge) unread" : help)
     }
 }
 
@@ -282,8 +314,11 @@ private struct BrowserView: View {
     var body: some View {
         WebViewHost(webView: workspace.webView)
             // Matches the page color so switching pages never flashes white under a dark theme.
-            .background(store.enabled ? Color(hex: store.selected.background) : Color(nsColor: .textBackgroundColor), ignoresSafeAreaEdges: [])
-            .overlay(alignment: .top) { LoadingBar(isLoading: workspace.isLoading, progress: workspace.progress) }
+            .background(store.enabled ? Color(hex: store.selected.background) : Color(nsColor: .textBackgroundColor))
+            .overlay(alignment: .top) {
+                LoadingBar(isLoading: workspace.isLoading, progress: workspace.progress)
+                    .padding(.top, workspace.usesWindowLayout ? ThemeInjection.headerHeight : 0)
+            }
             .overlay {
                 if let error = workspace.error {
                     ContentUnavailableView {

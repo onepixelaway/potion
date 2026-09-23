@@ -22,6 +22,7 @@ enum ThemeInjection {
         .notion-app-inner, .notion-page-content, .potion-preview { font-family: '\(t.bodyFont)', sans-serif !important; }
         .notion-frame, .notion-scroller.vertical, .notion-page-content, .notion-topbar { background-color: var(--potion-bg) !important; }
         .notion-sidebar-container, .notion-sidebar { background-color: var(--potion-surface) !important; }
+        .notion-sidebar-container .notion-scroller.vertical { background-color: transparent !important; }
         .notion-page-content { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
         .notion-text-block [contenteditable=true], .notion-bulleted_list-block [contenteditable=true], .notion-numbered_list-block [contenteditable=true], .notion-to_do-block [contenteditable=true] { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
         .notion-page-block [contenteditable=true], .notion-header-block [contenteditable=true], .notion-sub_header-block [contenteditable=true], .notion-sub_sub_header-block [contenteditable=true], .potion-preview h1, .potion-preview h2, .potion-preview h3 { font-family: '\(t.headingFont)', serif !important; }
@@ -70,22 +71,74 @@ enum ThemeInjection {
 extension ThemeInjection {
     static let chromeMessage = "potionChrome"
 
-    /// Reports the width and colors of Notion's sidebar and page, so the native header can continue them.
+    /// Height of the title bar row, shared by Notion's sidebar row and Potion's tab row.
+    static let headerHeight: CGFloat = 40
+
+    /// Where the sidebar button sits after the traffic lights, as in Notion's app, open or collapsed.
+    static let sidebarButtonX: CGFloat = 88
+
+    /// Lays Notion out like its Mac app: the sidebar's top row moves into the title bar, its collapse button just after
+    /// the traffic lights and its inbox and new-page buttons at the right; the page column moves down to make room for
+    /// Potion's back, forward and tab row. The elements are tagged by `chromeScript`.
+    private static let layoutCSS = """
+    .potion-sidebar-row { height: \(Int(headerHeight))px !important; padding-inline-start: \(Int(sidebarButtonX))px !important; }
+    .potion-page-column { padding-top: \(Int(headerHeight))px !important; }
+    .potion-below-header { top: \(Int(headerHeight))px !important; height: calc(100% - \(Int(headerHeight))px) !important; max-height: calc(100% - \(Int(headerHeight))px) !important; }
+    """
+
+    static func layoutFlag(_ enabled: Bool) -> String { "window.__potionLayout = \(enabled);\n" }
+
+    /// Tags Notion's sidebar row and page column for `layoutCSS`, applies it while `window.__potionLayout` is set, and
+    /// reports the sidebar's width (so Potion's tab row starts at its edge) and the inbox's unread count (shown on
+    /// Potion's own inbox button while the sidebar is collapsed).
     static let chromeScript = """
     (() => {
       if (window.__potionChromePost || !window.webkit?.messageHandlers?.\(chromeMessage)) return;
-      const opaque = (element) => {
-        for (let node = element; node && node !== document.documentElement; node = node.parentElement) {
-          const color = getComputedStyle(node).backgroundColor;
-          if (color && color !== 'transparent' && !/,\\s*0(\\.0+)?\\)$/.test(color)) return color;
+      const layoutCSS = \(String(data: try! JSONEncoder().encode(layoutCSS), encoding: .utf8)!);
+      const tag = () => {
+        const sidebar = document.querySelector('.notion-sidebar');
+        let row = sidebar && sidebar.querySelector('[role=button]');
+        while (row && row !== sidebar) {
+          const box = row.getBoundingClientRect();
+          if (row.children.length === 2 && getComputedStyle(row).display === 'flex' && box.height >= 32 && box.height <= 52) break;
+          row = row.parentElement;
         }
-        return getComputedStyle(document.body || document.documentElement).backgroundColor;
+        if (row && row !== sidebar && !row.classList.contains('potion-sidebar-row')) {
+          document.querySelectorAll('.potion-sidebar-row').forEach(node => node.classList.remove('potion-sidebar-row'));
+          row.classList.add('potion-sidebar-row');
+        }
+        const column = document.querySelector('.notion-frame')?.parentElement;
+        if (column && column.querySelector('.notion-topbar') && !column.classList.contains('potion-page-column')) column.classList.add('potion-page-column');
+        // Panels Notion pins to the top of the window beside the page (inbox, side peek) move below the tab row too.
+        // Full-window layers, such as menus and dialogs, stay put.
+        const panels = (element, depth) => {
+          for (const child of element.children) {
+            if (child.classList.contains('potion-page-column') || child.classList.contains('notion-sidebar-container')) continue;
+            if (getComputedStyle(child).position === 'fixed') {
+              const box = child.getBoundingClientRect();
+              if (box.top < \(Int(headerHeight)) && box.height > 100 && box.width < window.innerWidth - 1) child.classList.add('potion-below-header');
+            } else if (depth < 3) panels(child, depth + 1);
+          }
+        };
+        const listener = document.querySelector('.notion-cursor-listener');
+        if (listener) panels(listener, 0);
+        let style = document.getElementById('potion-layout');
+        if (!style) { style = document.createElement('style'); style.id = 'potion-layout'; (document.head || document.documentElement).appendChild(style); }
+        const css = window.__potionLayout ? layoutCSS : '';
+        if (style.textContent !== css) style.textContent = css;
+      };
+      const inboxCount = () => {
+        const button = document.querySelector('.notion-sidebar [role=button][aria-label="Inbox"]');
+        const badge = button?.parentElement?.parentElement?.innerText.replace(/\\D/g, '') || '0';
+        return parseInt(badge, 10) || 0;
       };
       let last = '';
       let observed = null;
+      let scheduled = false;
       const resize = new ResizeObserver(() => post());
       const post = () => {
         if (!document.body) return;
+        tag();
         const container = document.querySelector('.notion-sidebar-container');
         if (container !== observed) { if (observed) resize.unobserve(observed); if (container) resize.observe(container); observed = container; }
         let width = 0;
@@ -93,19 +146,25 @@ extension ThemeInjection {
           const box = container.getBoundingClientRect();
           if (box.left <= 1 && box.width > 40 && getComputedStyle(container).visibility !== 'hidden') width = Math.round(box.right);
         }
-        const sidebar = container && (container.querySelector('.notion-sidebar') || container);
-        const page = document.querySelector('.notion-frame') || document.querySelector('.notion-app-inner') || document.body;
-        const message = { sidebarWidth: width, sidebarColor: sidebar ? opaque(sidebar) : '', pageColor: opaque(page) };
+        const message = { sidebarWidth: width, inboxCount: inboxCount() };
         const key = JSON.stringify(message);
         if (key !== last) { last = key; window.webkit.messageHandlers.\(chromeMessage).postMessage(message); }
       };
+      const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; post(); }); } };
       window.__potionChromePost = post;
       window.addEventListener('resize', post);
-      setInterval(post, 400);
+      new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+      setInterval(post, 1000);
       post();
     })();
     """
     static let chromeRefresh = "\n;window.__potionChromePost && requestAnimationFrame(() => window.__potionChromePost());"
+
+    /// Presses one of the buttons in Notion's sidebar row, which stay in the page while the sidebar is collapsed.
+    static func pressSidebarButton(_ label: String) -> String {
+        let selector = ".notion-sidebar [role=button][aria-label=\"\(label)\"]"
+        return "document.querySelector(\(String(data: try! JSONEncoder().encode(selector), encoding: .utf8)!))?.click();"
+    }
 
     /// Sends Notion the same key event as its ⌘\ shortcut, which shows or hides its sidebar.
     static let toggleSidebarScript = """

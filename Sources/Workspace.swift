@@ -2,13 +2,6 @@ import SwiftUI
 import WebKit
 import UniformTypeIdentifiers
 
-/// The colors and sidebar width of the Notion page, so the window header can continue Notion's layout.
-struct PageChrome: Equatable {
-    var sidebarWidth: CGFloat = 0
-    var sidebarColor: NSColor?
-    var pageColor: NSColor?
-}
-
 /// A sign-in window a page opened with `window.open`, shown as a sheet.
 struct AuthPopup: Identifiable {
     let webView: WKWebView
@@ -29,7 +22,19 @@ struct AuthPopup: Identifiable {
     @Published private(set) var isSignedIn = false
     @Published var error: String?
     @Published var authPopup: AuthPopup?
-    @Published private(set) var chrome = PageChrome()
+    /// Width of Notion's sidebar (0 when it's collapsed), so Potion's tab row starts at its edge.
+    @Published private(set) var sidebarWidth: CGFloat = 0
+    /// Unread notifications in Notion's inbox.
+    @Published private(set) var inboxCount = 0
+    /// Moves Notion's sidebar row into the title bar and makes room for Potion's tab row. Off during sign-in.
+    var usesWindowLayout = false {
+        didSet {
+            guard usesWindowLayout != oldValue else { return }
+            installScripts()
+            webView.evaluateJavaScript(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeRefresh, completionHandler: nil)
+        }
+    }
+    private var themeScript: String?
     /// The current workspace page, restored per window and tab on relaunch.
     @Published private(set) var pageURL: URL?
     /// Opens a Notion page in a new tab. Set by the window hosting this workspace.
@@ -46,7 +51,7 @@ struct AuthPopup: Identifiable {
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init()
         configuration.userContentController.add(WeakMessageHandler(self), name: ThemeInjection.chromeMessage)
-        installScripts(themeScript: nil)
+        installScripts()
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
@@ -67,13 +72,15 @@ struct AuthPopup: Identifiable {
     }
 
     func apply(_ theme: PotionTheme, enabled: Bool) {
-        installScripts(themeScript: ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: true))
+        themeScript = ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: true)
+        installScripts()
         webView.evaluateJavaScript(ThemeInjection.script(theme: theme, enabled: enabled, includeFonts: false) + ThemeInjection.chromeRefresh, completionHandler: nil)
     }
-    private func installScripts(themeScript: String?) {
+    private func installScripts() {
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
-        controller.addUserScript(WKUserScript(source: ThemeInjection.chromeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        controller.addUserScript(WKUserScript(source: ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript,
+                                              injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         if let themeScript {
             controller.addUserScript(WKUserScript(source: themeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         }
@@ -82,6 +89,10 @@ struct AuthPopup: Identifiable {
     func toggleSidebar() {
         webView.evaluateJavaScript(ThemeInjection.toggleSidebarScript, completionHandler: nil)
     }
+    /// Opens Notion's inbox, as its sidebar button does.
+    func openInbox() { webView.evaluateJavaScript(ThemeInjection.pressSidebarButton("Inbox"), completionHandler: nil) }
+    /// Starts a new Notion page, as its sidebar button does.
+    func newPage() { webView.evaluateJavaScript(ThemeInjection.pressSidebarButton("New page"), completionHandler: nil) }
     var displayTitle: String { NavigationPolicy.pageTitle(title) }
 
     /// Loads the offline sample page. Used to verify theme rendering without a Notion account.
@@ -154,11 +165,11 @@ struct AuthPopup: Identifiable {
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame, let url = message.frameInfo.request.url, NavigationPolicy.isNotion(url),
-              let body = message.body as? [String: Any] else { return }
-        let next = PageChrome(sidebarWidth: CGFloat((body["sidebarWidth"] as? NSNumber)?.doubleValue ?? 0),
-                              sidebarColor: (body["sidebarColor"] as? String).flatMap(NSColor.init(css:)),
-                              pageColor: (body["pageColor"] as? String).flatMap(NSColor.init(css:)))
-        if next != chrome { chrome = next }
+              let body = message.body as? [String: Any], let width = body["sidebarWidth"] as? NSNumber else { return }
+        let next = CGFloat(width.doubleValue)
+        if next != sidebarWidth { sidebarWidth = next }
+        let count = (body["inboxCount"] as? NSNumber)?.intValue ?? 0
+        if count != inboxCount { inboxCount = count }
     }
 
     // MARK: Navigation
@@ -273,17 +284,6 @@ private final class WeakMessageHandler: NSObject, WKScriptMessageHandler {
     init(_ target: WKScriptMessageHandler) { self.target = target }
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         target?.userContentController(controller, didReceive: message)
-    }
-}
-
-extension NSColor {
-    /// Parses a computed CSS color such as `rgb(32, 37, 44)` or `rgba(0, 0, 0, 0.5)`. Transparent colors are nil.
-    convenience init?(css: String) {
-        let numbers = css.split { !"0123456789.".contains($0) }.compactMap { Double($0) }
-        guard css.hasPrefix("rgb"), numbers.count >= 3 else { return nil }
-        let alpha = numbers.count > 3 ? numbers[3] : 1
-        guard alpha > 0.5 else { return nil }
-        self.init(srgbRed: numbers[0] / 255, green: numbers[1] / 255, blue: numbers[2] / 255, alpha: 1)
     }
 }
 

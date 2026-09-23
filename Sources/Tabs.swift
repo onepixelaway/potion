@@ -11,6 +11,8 @@ extension Workspace: Identifiable {}
     @Published private(set) var snapshot = ""
     weak var window: NSWindow?
     private var styling: (theme: PotionTheme, enabled: Bool) = (PotionTheme.presets[0], false)
+    /// Notion's Mac-app layout, on once the person is in their workspace.
+    var usesWindowLayout = false { didSet { tabs.forEach { $0.usesWindowLayout = usesWindowLayout } } }
     private var subscriptions: [ObjectIdentifier: AnyCancellable] = [:]
 
     private struct Snapshot: Codable { var urls: [URL?]; var selected: Int }
@@ -77,6 +79,7 @@ extension Workspace: Identifiable {}
 
     private func configure(_ tab: Workspace) {
         tab.onOpenTab = { [weak self] url in self?.newTab(url, select: false) }
+        tab.usesWindowLayout = usesWindowLayout
         subscriptions[ObjectIdentifier(tab)] = tab.$pageURL.dropFirst().sink { [weak self] _ in
             Task { @MainActor in self?.persist() }
         }
@@ -106,34 +109,6 @@ struct WindowAccessor: NSViewRepresentable {
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             if let window { onWindow(window) }
-        }
-    }
-}
-
-/// Reports a view's leading edge in window coordinates, so header items can line up with Notion's sidebar.
-struct WindowXReader: NSViewRepresentable {
-    @Binding var x: CGFloat
-
-    func makeNSView(context: Context) -> ReaderView { ReaderView { x = $0 } }
-    func updateNSView(_ view: ReaderView, context: Context) { view.report() }
-
-    final class ReaderView: NSView {
-        let onChange: (CGFloat) -> Void
-        private var last: CGFloat = -1
-        init(onChange: @escaping (CGFloat) -> Void) {
-            self.onChange = onChange
-            super.init(frame: .zero)
-            postsFrameChangedNotifications = true
-        }
-        required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-        override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); report() }
-        override func layout() { super.layout(); report() }
-        func report() {
-            guard window != nil else { return }
-            let x = convert(bounds, to: nil).minX.rounded()
-            guard x != last else { return }
-            last = x
-            DispatchQueue.main.async { self.onChange(x) }
         }
     }
 }

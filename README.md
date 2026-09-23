@@ -17,7 +17,7 @@ The command-line build requires Xcode and XcodeGen (`brew install xcodegen`). Th
 
 The first launch shows a welcome, then **Sign in to Notion** (Notion's own login page, shown in the window). Sign-in popups for Google, Apple and Microsoft open as a sheet over the window. Once you're in, your workspace opens with the Appearance panel showing so you can pick a theme; it closes after you choose. Later launches open straight to your last Notion page.
 
-The window is your workspace, full width, under a slim header modeled on Notion's own Mac app: no window title (Notion's breadcrumb already says where you are), and the header takes Notion's sidebar color above the sidebar and the page color above the page, so the two read as one surface. Like Notion's, the header puts the sidebar toggle over the sidebar, then back, forward and your tabs starting at the sidebar's edge, with reload, open in browser and **Appearance** on the right. Each tab has its own page; ⌘-click a Notion link to open it in a background tab. Your tabs come back on relaunch.
+The window is laid out like Notion's own Mac app. Notion fills the window up to the title bar: with the sidebar open, its top row sits beside the traffic lights (collapse button first, inbox and new page at the sidebar's edge); with it collapsed, Potion shows the same three buttons, with the inbox's unread count, right after the traffic lights. Then come back and forward, your tabs in full-height cells, and reload, open in browser and **Appearance** on the right; there's no window title, since Notion's breadcrumb already says where you are. Panels Notion pins beside the page, such as the inbox, open below the tab row. Empty parts of the row move the window, and double-clicking zooms it. Each tab has its own page; ⌘-click a Notion link to open it in a background tab. Your tabs come back on relaunch.
 
 **Appearance** opens a panel with every theme (Notion Default, the collection, and your own). **Customize…** switches the panel to the editor: fonts, text size, line spacing and colors; edits preview live, Save keeps them and Cancel restores the saved theme. Right-click a theme to customize, duplicate or delete it. The window's light or dark appearance follows the active theme. Sign out from the Potion menu or Settings (⌘,); this clears Notion's cookies and website data from Potion and returns to sign-in.
 
@@ -59,7 +59,7 @@ Font originals and license files: [Google Fonts repository](https://github.com/g
 - `RootView.swift`: one window or tab; switches between stages, keeps theme injection in sync, restores its page, and presents sign-in sheets.
 - `Onboarding.swift` / `MainView.swift` / `ThemeViews.swift` / `ThemeEditor.swift`: onboarding screens, the workspace window with its Notion-style header, tabs and Appearance panel, theme cards, and the theme editor.
 - `PotionTheme.swift`: validated theme model, curated presets, font registration, and versioned local persistence.
-- `ThemeInjection.swift`: scoped Notion styling, bundled font injection, style recovery after DOM replacement, the script that reports Notion's sidebar width and colors to the header, and navigation and sign-in URL policies.
+- `ThemeInjection.swift`: scoped Notion styling, bundled font injection, style recovery after DOM replacement, the layout script that moves Notion's sidebar row into the title bar and reports the sidebar's width, and navigation and sign-in URL policies.
 - `Workspace.swift`: persistent WKWebView, sign-in detection, sign-in popups, navigation, uploads, downloads, and error handling.
 - `Resources/Preview.html`: offline sample page used by the WebKit rendering tests.
 
@@ -72,7 +72,7 @@ xcodebuild -project Potion.xcodeproj -scheme Potion \
   -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO test
 ```
 
-Tests cover persistence/edit/delete behavior, onboarding stages, the Appearance panel, header color parsing, tab titles, sign-in popup and redirect policy, workspace detection, unsafe input handling, URL boundaries, bundled resources, and actual WebKit rendering with live theme switching, removal, and reinjection.
+Tests cover persistence/edit/delete behavior, onboarding stages, the Appearance panel, tab titles and saved addresses, sign-in popup and redirect policy, workspace detection, unsafe input handling, URL boundaries, bundled resources, and actual WebKit rendering with live theme switching, removal, and reinjection.
 
 ## Boundaries
 

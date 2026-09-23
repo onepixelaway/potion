@@ -28,6 +28,7 @@ struct RootView: View {
             }
             .onChange(of: styling, initial: true) { _, styling in tabs.apply(styling.theme, enabled: styling.enabled) }
             .onChange(of: tabs.snapshot) { _, snapshot in savedTabs = snapshot }
+            .onChange(of: flow.stage, initial: true) { _, stage in tabs.usesWindowLayout = stage == .ready }
             .onChange(of: flow.stage) { old, stage in
                 switch (old, stage) {
                 case (.welcome, .signIn) where tabs.current.isSignedIn:
