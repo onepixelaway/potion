@@ -34,7 +34,7 @@ private struct PotionCommands: Commands {
     @ObservedObject var store: ThemeStore
     @ObservedObject var flow: AppFlow
     @FocusedObject private var tabs: BrowserTabs?
-    @FocusedObject private var workspace: Workspace?
+    @FocusedValue(\.workspace) private var workspace
     @FocusedObject private var appearance: AppearanceState?
     @Environment(\.openWindow) private var openWindow
 

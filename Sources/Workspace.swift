@@ -7,45 +7,51 @@ struct AuthPopup: Identifiable {
     var id: ObjectIdentifier { ObjectIdentifier(webView) }
 }
 
-@MainActor final class Workspace: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler {
+/// One tab's Notion web view and the state its window shows. Observed per property, so a loading-progress tick
+/// redraws only the views that read progress.
+@MainActor @Observable final class Workspace: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler {
     static let loginURL = URL(string: "https://app.notion.com/login")!
     static let homeURL = URL(string: "https://app.notion.com/")!
     /// The offline sample page. Used to verify theme rendering without a Notion account.
     static let previewURL = Bundle.main.url(forResource: "Preview", withExtension: "html")
     private static let lastURLKey = "potion.lastNotionURL"
 
-    let webView: WKWebView
-    @Published private(set) var isLoading = false
-    @Published private(set) var progress = 0.0
-    @Published private(set) var canGoBack = false
-    @Published private(set) var canGoForward = false
-    @Published private(set) var title = ""
-    @Published private(set) var isSignedIn = false
-    @Published var error: String?
-    @Published var authPopup: AuthPopup?
+    @ObservationIgnored let webView: WKWebView
+    private(set) var isLoading = false
+    private(set) var progress = 0.0
+    private(set) var canGoBack = false
+    private(set) var canGoForward = false
+    private(set) var title = ""
+    private(set) var url: URL?
+    private(set) var isSignedIn = false
+    var error: String?
+    var authPopup: AuthPopup?
     /// Width of Notion's sidebar (0 when it's collapsed), so Potion's tab row starts at its edge.
-    @Published private(set) var sidebarWidth: CGFloat = 0
+    private(set) var sidebarWidth: CGFloat = 0
     /// Unread notifications in Notion's inbox.
-    @Published private(set) var inboxCount = 0
+    private(set) var inboxCount = 0
     /// Moves Notion's sidebar row into the title bar and makes room for Potion's tab row. Off during sign-in.
-    var usesWindowLayout = false {
+    @ObservationIgnored var usesWindowLayout = false {
         didSet {
             guard usesWindowLayout != oldValue else { return }
-            installScripts()
+            scriptsOutdated = true
             run(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeRefresh)
         }
     }
-    private var themeScript: String?
+    @ObservationIgnored private var themeScript: String?
     /// Whether the installed theme restyles pages, and so needs the bundled fonts.
-    private var themeEnabled = false
+    @ObservationIgnored private var themeEnabled = false
+    /// Changes reach the open page right away; the user scripts, which carry them to later pages and include the
+    /// large fonts script, are reinstalled only when a page loads. So a theme edit doesn't resend them on every tick.
+    @ObservationIgnored private var scriptsOutdated = true
     /// The current workspace page, restored per window and tab on relaunch.
-    @Published private(set) var pageURL: URL? { didSet { onPageChange?() } }
+    @ObservationIgnored private(set) var pageURL: URL? { didSet { onPageChange?() } }
     /// Called after `pageURL` changes. Set by the window hosting this workspace.
-    var onPageChange: (() -> Void)?
+    @ObservationIgnored var onPageChange: (() -> Void)?
     /// Opens a Notion page in a new tab. Set by the window hosting this workspace.
-    var onOpenTab: ((URL) -> Void)?
-    private var observations: [NSKeyValueObservation] = []
-    private var popups: [WKWebView] = []
+    @ObservationIgnored var onOpenTab: ((URL) -> Void)?
+    @ObservationIgnored private var observations: [NSKeyValueObservation] = []
+    @ObservationIgnored private var popups: [WKWebView] = []
 
     override init() {
         let configuration = WKWebViewConfiguration()
@@ -56,7 +62,6 @@ struct AuthPopup: Identifiable {
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init()
         configuration.userContentController.add(WeakMessageHandler(self), name: ThemeInjection.chromeMessage)
-        installScripts()
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
@@ -79,10 +84,12 @@ struct AuthPopup: Identifiable {
         let fonts = enabled && !themeEnabled ? ThemeInjection.fontScript + "\n" : ""
         themeScript = script
         themeEnabled = enabled
-        installScripts()
+        scriptsOutdated = true
         run(fonts + script + ThemeInjection.chromeRefresh)
     }
-    private func installScripts() {
+    private func installScriptsIfOutdated() {
+        guard scriptsOutdated else { return }
+        scriptsOutdated = false
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
         controller.addUserScript(WKUserScript(source: ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript,
@@ -128,7 +135,7 @@ struct AuthPopup: Identifiable {
     }
     func goBack() { webView.goBack() }
     func goForward() { webView.goForward() }
-    var canOpenInBrowser: Bool { webView.url.map(NavigationPolicy.canOpenExternally) ?? false }
+    var canOpenInBrowser: Bool { url.map(NavigationPolicy.canOpenExternally) ?? false }
     func openInBrowser() {
         guard let url = webView.url, NavigationPolicy.canOpenExternally(url) else { return }
         NSWorkspace.shared.open(url)
@@ -160,6 +167,7 @@ struct AuthPopup: Identifiable {
         update(\.canGoBack, webView.canGoBack)
         update(\.canGoForward, webView.canGoForward)
         update(\.title, webView.title ?? "")
+        update(\.url, webView.url)
         guard let url = webView.url, !url.isFileURL else { return }
         // Notion is a single-page app, so the URL is observed directly rather than waiting for didFinish.
         let signedIn = NavigationPolicy.isWorkspacePage(url)
@@ -196,6 +204,7 @@ struct AuthPopup: Identifiable {
 
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { decisionHandler(.cancel); return }
+        if webView === self.webView, action.targetFrame?.isMainFrame == true { installScriptsIfOutdated() }
         if action.shouldPerformDownload { decisionHandler(.download); return }
         if action.targetFrame?.isMainFrame == false { decisionHandler(.allow); return }
         if url.isFileURL {

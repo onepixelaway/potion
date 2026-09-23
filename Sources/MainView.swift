@@ -3,13 +3,13 @@ import SwiftUI
 struct MainView: View {
     @ObservedObject var store: ThemeStore
     @ObservedObject var tabs: BrowserTabs
-    @ObservedObject var workspace: Workspace
+    let workspace: Workspace
     @ObservedObject var appearance: AppearanceState
 
     var body: some View {
         // Notion fills the window up to the title bar, as in its own app; Potion's tab row sits over the page column.
         ZStack(alignment: .topLeading) {
-            BrowserView(store: store, workspace: workspace)
+            BrowserView(theme: tabs.styling.active, workspace: workspace)
             WindowHeader(tabs: tabs, workspace: workspace, appearance: appearance)
         }
         .ignoresSafeArea(edges: .top)
@@ -17,10 +17,10 @@ struct MainView: View {
         .navigationTitle(workspace.displayTitle)
         .hiddenTitleBar()
         .modifier(TitleBarHeight())
-        // Header controls over the page follow the theme's light or dark appearance.
-        .preferredColorScheme(store.active.map { $0.isDark ? .dark : .light })
+        // Header controls over the page follow the theme's light or dark appearance, including one being edited.
+        .preferredColorScheme(tabs.styling.active.map { $0.isDark ? .dark : .light })
         .inspector(isPresented: $appearance.isShown) {
-            AppearancePanel(store: store, tabs: tabs, appearance: appearance)
+            AppearancePanel(store: store, appearance: appearance)
                 .inspectorColumnWidth(min: 290, ideal: 310, max: 380)
         }
     }
@@ -42,7 +42,7 @@ private struct TitleBarHeight: ViewModifier {
 /// collapsed, Potion's buttons stand in for those. Then come back and forward, the tabs, and the page actions.
 private struct WindowHeader: View {
     @ObservedObject var tabs: BrowserTabs
-    @ObservedObject var workspace: Workspace
+    let workspace: Workspace
     @ObservedObject var appearance: AppearanceState
 
     private let buttonX = ThemeInjection.sidebarButtonX
@@ -148,7 +148,7 @@ private struct TabStrip: View {
 }
 
 private struct TabItem: View {
-    @ObservedObject var workspace: Workspace
+    let workspace: Workspace
     let isSelected: Bool
     let tabs: BrowserTabs
     @State private var isHovering = false
@@ -234,12 +234,11 @@ private struct HeaderIconButton: View {
 /// Everything about how Notion looks: the theme gallery, and the theme editor in place of it while editing.
 private struct AppearancePanel: View {
     @ObservedObject var store: ThemeStore
-    @ObservedObject var tabs: BrowserTabs
     @ObservedObject var appearance: AppearanceState
 
     var body: some View {
         if let theme = appearance.editing {
-            ThemeEditor(original: theme, tabs: tabs, store: store, appearance: appearance)
+            ThemeEditor(original: theme, store: store, appearance: appearance)
                 .id(theme.id)
         } else {
             gallery
@@ -310,15 +309,15 @@ private struct AppearancePanel: View {
 }
 
 private struct BrowserView: View {
-    @ObservedObject var store: ThemeStore
-    @ObservedObject var workspace: Workspace
+    let theme: PotionTheme?
+    let workspace: Workspace
 
     var body: some View {
         WebViewHost(webView: workspace.webView)
             // Matches the page color so switching pages never flashes white under a dark theme.
-            .background(store.active.map { Color(hex: $0.background) } ?? Color(nsColor: .textBackgroundColor))
+            .background(theme.map { Color(hex: $0.background) } ?? Color(nsColor: .textBackgroundColor))
             .overlay(alignment: .top) {
-                LoadingBar(isLoading: workspace.isLoading, progress: workspace.progress)
+                LoadingBar(workspace: workspace)
                     .padding(.top, ThemeInjection.headerHeight)
             }
             .overlay {
@@ -339,21 +338,21 @@ private struct BrowserView: View {
     }
 }
 
-/// A thin Safari-style progress line along the top of the page.
+/// A thin Safari-style progress line along the top of the page. The only view in the window that reads progress,
+/// so loading redraws just this line.
 private struct LoadingBar: View {
-    let isLoading: Bool
-    let progress: Double
+    let workspace: Workspace
 
     var body: some View {
         GeometryReader { proxy in
             Rectangle()
                 .fill(.tint)
-                .frame(width: proxy.size.width * max(0.05, progress), height: 2)
-                .animation(.easeOut(duration: 0.25), value: progress)
+                .frame(width: proxy.size.width * max(0.05, workspace.progress), height: 2)
+                .animation(.easeOut(duration: 0.25), value: workspace.progress)
         }
         .frame(height: 2)
-        .opacity(isLoading ? 1 : 0)
-        .animation(.easeOut(duration: 0.3), value: isLoading)
+        .opacity(workspace.isLoading ? 1 : 0)
+        .animation(.easeOut(duration: 0.3), value: workspace.isLoading)
         .accessibilityHidden(true)
     }
 }

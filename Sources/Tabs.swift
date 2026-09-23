@@ -2,10 +2,17 @@ import SwiftUI
 
 extension Workspace: Identifiable {}
 
+extension FocusedValues {
+    /// The focused window's current tab, for menu commands.
+    @Entry var workspace: Workspace?
+}
+
 /// The theme a window's tabs show, and whether it's on.
 struct ThemeStyling: Equatable {
     var theme: PotionTheme
     var enabled: Bool
+    /// The theme restyling Notion, or nil for Notion's own look.
+    var active: PotionTheme? { enabled ? theme : nil }
 }
 
 /// A window's tabs, drawn in the header as in Notion's app. Each tab has its own web view; all share Notion's cookies.
@@ -13,7 +20,8 @@ struct ThemeStyling: Equatable {
     @Published private(set) var tabs: [Workspace]
     @Published private(set) var current: Workspace
     weak var window: NSWindow?
-    private var styling = ThemeStyling(theme: .standard, enabled: false)
+    /// What every tab shows, including tabs opened later.
+    @Published private(set) var styling = ThemeStyling(theme: .standard, enabled: false)
     /// Notion's Mac-app layout, on once the person is in their workspace.
     var usesWindowLayout = false { didSet { tabs.forEach { $0.usesWindowLayout = usesWindowLayout } } }
     /// The last snapshot this window saved, so unchanged tabs don't overwrite another window's.
@@ -68,14 +76,10 @@ struct ThemeStyling: Equatable {
         select(tabs[(index + offset + tabs.count) % tabs.count])
     }
 
-    /// Applies the saved theme to every tab, and to tabs opened later.
     func apply(_ styling: ThemeStyling) {
         self.styling = styling
         tabs.forEach { $0.apply(styling.theme, enabled: styling.enabled) }
     }
-    /// Shows an unsaved theme on every tab while it's being edited; `restoreStyling` puts the saved one back.
-    func preview(_ theme: PotionTheme) { tabs.forEach { $0.apply(theme, enabled: true) } }
-    func restoreStyling() { apply(styling) }
 
     /// Reopens the saved tabs, or the last page when there is nothing to restore.
     func restore() {

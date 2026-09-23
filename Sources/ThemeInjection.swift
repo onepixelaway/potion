@@ -104,7 +104,9 @@ extension ThemeInjection {
 
     /// Tags Notion's sidebar row and page column for `layoutCSS`, applies it while `window.__potionLayout` is set, and
     /// reports the sidebar's width (so Potion's tab row starts at its edge) and the inbox's unread count (shown on
-    /// Potion's own inbox button while the sidebar is collapsed).
+    /// Potion's own inbox button while the sidebar is collapsed). It runs only when something changes: elements added
+    /// or removed anywhere, the sidebar resizing (its collapse animates its width), and any change inside the sidebar,
+    /// including text such as the inbox badge. Text edits elsewhere, like typing in a page, don't wake it.
     static let chromeScript = """
     (() => {
       if (window.__potionChromePost || !window.webkit?.messageHandlers?.\(chromeMessage)) return;
@@ -141,18 +143,29 @@ extension ThemeInjection {
       };
       const inboxCount = () => {
         const button = document.querySelector(\(jsLiteral(sidebarButton("Inbox"))));
-        const badge = button?.parentElement?.parentElement?.innerText.replace(/\\D/g, '') || '0';
+        // textContent, since Notion hides the collapsed sidebar and innerText skips hidden text.
+        const badge = button?.parentElement?.parentElement?.textContent.replace(/\\D/g, '') || '0';
         return parseInt(badge, 10) || 0;
       };
       let last = '';
       let observed = null;
       let scheduled = false;
+      const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; post(); }); } };
       const resize = new ResizeObserver(() => post());
+      const sidebarChanges = new MutationObserver(schedule);
       const post = () => {
         if (!document.body) return;
         tag();
         const container = document.querySelector('.notion-sidebar-container');
-        if (container !== observed) { if (observed) resize.unobserve(observed); if (container) resize.observe(container); observed = container; }
+        if (container !== observed) {
+          resize.disconnect();
+          sidebarChanges.disconnect();
+          if (container) {
+            resize.observe(container);
+            sidebarChanges.observe(container, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style'] });
+          }
+          observed = container;
+        }
         let width = 0;
         if (container) {
           const box = container.getBoundingClientRect();
@@ -162,11 +175,9 @@ extension ThemeInjection {
         const key = JSON.stringify(message);
         if (key !== last) { last = key; window.webkit.messageHandlers.\(chromeMessage).postMessage(message); }
       };
-      const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; post(); }); } };
       window.__potionChromePost = post;
       window.addEventListener('resize', schedule);
       new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-      setInterval(post, 1000);
       post();
     })();
     """
