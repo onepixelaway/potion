@@ -1,18 +1,18 @@
 import SwiftUI
 
-/// The theme editor in the Appearance panel. Edits preview live on the workspace; Save keeps them and Cancel restores the saved theme.
+/// The theme editor in the Appearance panel. Edits preview live on every tab; Save keeps them and Cancel restores the saved theme.
 struct ThemeEditor: View {
     let original: PotionTheme
-    @ObservedObject var workspace: Workspace
+    @ObservedObject var tabs: BrowserTabs
     @ObservedObject var store: ThemeStore
     @ObservedObject var appearance: AppearanceState
     @State private var draft: PotionTheme
     @State private var saved = false
     private let initial: PotionTheme
 
-    init(original: PotionTheme, workspace: Workspace, store: ThemeStore, appearance: AppearanceState) {
+    init(original: PotionTheme, tabs: BrowserTabs, store: ThemeStore, appearance: AppearanceState) {
         self.original = original
-        self.workspace = workspace
+        self.tabs = tabs
         self.store = store
         self.appearance = appearance
         var theme = original
@@ -87,11 +87,11 @@ struct ThemeEditor: View {
             }
             .padding(16)
         }
-        .onAppear { workspace.apply(draft, enabled: true) }
-        .onChange(of: draft) { _, theme in workspace.apply(theme, enabled: true) }
+        .onAppear { tabs.preview(draft) }
+        .onChange(of: draft) { _, theme in tabs.preview(theme) }
         // Choosing a different theme (from the Theme menu) abandons the edit.
         .onChange(of: store.activeID) { _, _ in if !saved { appearance.editing = nil } }
-        .onDisappear { if !saved { workspace.apply(store.selected, enabled: store.enabled) } }
+        .onDisappear { if !saved { tabs.restoreStyling() } }
     }
 
     private func fontPicker(_ title: String, selection: Binding<String>) -> some View {

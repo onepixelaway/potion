@@ -48,12 +48,15 @@ final class PotionTests: XCTestCase {
     func testWorkspaceDetectionMarksSignInComplete() {
         for address in ["https://app.notion.com/login", "https://app.notion.com/", "https://app.notion.com/onboarding",
                         "https://app.notion.com/googlepopupredirect?x=1", "https://app.notion.com/googlepopupcallback",
-                        "https://team.notion.site/Public-Page", "https://accounts.google.com/x"] {
+                        "https://team.notion.site/Public-Page", "https://accounts.google.com/x",
+                        "https://www.notion.com/help", "https://notion.com/product"] {
             XCTAssertFalse(NavigationPolicy.isWorkspacePage(URL(string: address)!), address)
         }
         for address in ["https://app.notion.com/My-Page-0123456789abcdef", "https://www.notion.so/acme/Roadmap-abc"] {
             XCTAssertTrue(NavigationPolicy.isWorkspacePage(URL(string: address)!), address)
         }
+        XCTAssertFalse(NavigationPolicy.isRestorable(URL(string: "https://app.notion.com/note/46846d11-8bb2")!))
+        XCTAssertTrue(NavigationPolicy.isRestorable(URL(string: "https://app.notion.com/p/me/Page-cf3fbe84")!))
     }
     @MainActor func testSignInFlowPersistsAndSignOutResets() {
         let suite = "PotionTests.\(UUID().uuidString)"

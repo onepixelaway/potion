@@ -4,15 +4,21 @@ import SwiftUI
 struct PotionApp: App {
     @StateObject private var store = ThemeStore()
     @StateObject private var flow = AppFlow()
-    init() { FontCatalog.register() }
+    init() {
+        FontCatalog.register()
+        // Tabs live in Potion's header, as in Notion's app, rather than in the system tab bar.
+        NSWindow.allowsAutomaticWindowTabbing = false
+        // Potion restores its own tabs. System window restoration is off so a saved window from an older
+        // version can never stop the window from opening at launch.
+        UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
+    }
 
     var body: some Scene {
-        WindowGroup(for: TabRequest.self) { $request in
-            RootView(request: request, store: store, flow: flow)
-        } defaultValue: {
-            TabRequest()
+        WindowGroup(id: "workspace") {
+            RootView(store: store, flow: flow)
         }
         .defaultSize(width: 1280, height: 860)
+        .restorationBehavior(.disabled)
         .windowToolbarStyle(.unifiedCompact(showsTitle: false))
         .commands { PotionCommands(store: store, flow: flow) }
 
@@ -27,6 +33,7 @@ struct PotionApp: App {
 private struct PotionCommands: Commands {
     @ObservedObject var store: ThemeStore
     @ObservedObject var flow: AppFlow
+    @FocusedObject private var tabs: BrowserTabs?
     @FocusedObject private var workspace: Workspace?
     @FocusedObject private var appearance: AppearanceState?
     @Environment(\.openWindow) private var openWindow
@@ -46,12 +53,17 @@ private struct PotionCommands: Commands {
                 .disabled(!inWorkspace)
         }
         CommandGroup(replacing: .newItem) {
-            Button("New Tab") { Tabs.open(nil, from: NSApp.keyWindow, using: openWindow) }
+            Button("New Tab") { tabs?.newTab() }
                 .keyboardShortcut("t")
-                .disabled(!inWorkspace)
-            Button("New Window") { Tabs.openWindow(using: openWindow) }
+                .disabled(!inWorkspace || tabs == nil)
+            Button("New Window") { openWindow(id: "workspace") }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(!inWorkspace)
+            Divider()
+            // Listed before the system's Close item, so ⌘W closes a tab first and the window with its last tab.
+            Button("Close Tab") { if let tabs { tabs.close(tabs.current) } }
+                .keyboardShortcut("w")
+                .disabled(!inWorkspace || tabs == nil)
         }
         CommandGroup(before: .toolbar) {
             Button("Toggle Notion Sidebar") { workspace?.toggleSidebar() }
@@ -75,6 +87,13 @@ private struct PotionCommands: Commands {
             Button("Open in Browser") { workspace?.openInBrowser() }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
                 .disabled(workspace?.canOpenInBrowser != true)
+            Divider()
+            Button("Show Previous Tab") { tabs?.selectPrevious() }
+                .keyboardShortcut("[", modifiers: [.command, .shift])
+                .disabled((tabs?.tabs.count ?? 0) < 2)
+            Button("Show Next Tab") { tabs?.selectNext() }
+                .keyboardShortcut("]", modifiers: [.command, .shift])
+                .disabled((tabs?.tabs.count ?? 0) < 2)
             Divider()
         }
         CommandMenu("Theme") {
