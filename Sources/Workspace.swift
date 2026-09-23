@@ -98,8 +98,9 @@ struct AuthPopup: Identifiable {
     func open(_ url: URL? = nil) {
         error = nil
         let saved = UserDefaults.standard.url(forKey: Self.lastURLKey)
-        let candidates = [url, saved.flatMap { NavigationPolicy.isWorkspacePage($0) ? $0 : nil }]
-        webView.load(URLRequest(url: candidates.compactMap { $0 }.first { NavigationPolicy.isNotion($0) } ?? Self.loginURL))
+        let requested = url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil }
+        let restorable = saved.flatMap { NavigationPolicy.isRestorable($0) ? $0 : nil }
+        webView.load(URLRequest(url: requested ?? restorable ?? Self.loginURL))
     }
     func reload() {
         error = nil
@@ -142,7 +143,7 @@ struct AuthPopup: Identifiable {
         guard let url = webView.url, !url.isFileURL else { return }
         // Notion is a single-page app, so the URL is observed directly rather than waiting for didFinish.
         let signedIn = NavigationPolicy.isWorkspacePage(url)
-        if signedIn, let safeURL = NavigationPolicy.withoutQuery(url), safeURL != pageURL {
+        if signedIn, NavigationPolicy.isRestorable(url), let safeURL = NavigationPolicy.withoutQuery(url), safeURL != pageURL {
             pageURL = safeURL
             UserDefaults.standard.set(safeURL, forKey: Self.lastURLKey)
         }
@@ -302,6 +303,8 @@ struct WebViewHost: NSViewRepresentable {
         container.layer?.cornerCurve = .continuous
         container.layer?.masksToBounds = cornerRadius > 0
         guard webView.superview !== container else { return }
+        // Switching tabs swaps which web view this host shows.
+        container.subviews.forEach { $0.removeFromSuperview() }
         webView.removeFromSuperview()
         webView.frame = container.bounds
         webView.autoresizingMask = [.width, .height]

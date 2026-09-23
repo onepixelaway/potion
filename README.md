@@ -17,14 +17,15 @@ The command-line build requires Xcode and XcodeGen (`brew install xcodegen`). Th
 
 The first launch shows a welcome, then **Sign in to Notion** (Notion's own login page, shown in the window). Sign-in popups for Google, Apple and Microsoft open as a sheet over the window. Once you're in, your workspace opens with the Appearance panel showing so you can pick a theme; it closes after you choose. Later launches open straight to your last Notion page.
 
-The window is your workspace, full width, under a slim header modeled on Notion's own Mac app: no window title (Notion's breadcrumb already says where you are), and the header takes Notion's sidebar color above the sidebar and the page color above the page, so the two read as one surface. The header holds Notion's sidebar toggle, back and forward on the left, and reload, open in browser and **Appearance** on the right. Each tab is a native macOS window tab with its own page; ⌘-click a Notion link to open it in a new tab. Tabs and their pages come back on relaunch.
+The window is your workspace, full width, under a slim header modeled on Notion's own Mac app: no window title (Notion's breadcrumb already says where you are), and the header takes Notion's sidebar color above the sidebar and the page color above the page, so the two read as one surface. Like Notion's, the header puts the sidebar toggle over the sidebar, then back, forward and your tabs starting at the sidebar's edge, with reload, open in browser and **Appearance** on the right. Each tab has its own page; ⌘-click a Notion link to open it in a background tab. Your tabs come back on relaunch.
 
 **Appearance** opens a panel with every theme (Notion Default, the collection, and your own). **Customize…** switches the panel to the editor: fonts, text size, line spacing and colors; edits preview live, Save keeps them and Cancel restores the saved theme. Right-click a theme to customize, duplicate or delete it. The window's light or dark appearance follows the active theme. Sign out from the Potion menu or Settings (⌘,); this clears Notion's cookies and website data from Potion and returns to sign-in.
 
 | Shortcut | Action |
 | --- | --- |
 | ⌘T / ⇧⌘N | New tab / new window |
-| ⌘W | Close tab |
+| ⌘W | Close tab (the window with its last tab) |
+| ⇧⌘[ / ⇧⌘] | Previous / next tab |
 | ⌘\\ | Show or hide Notion's sidebar |
 | ⌘[ / ⌘] | Back / Forward |
 | ⌘R | Reload |
@@ -54,9 +55,9 @@ Font originals and license files: [Google Fonts repository](https://github.com/g
 ## Implementation
 
 - `AppFlow.swift`: app-wide onboarding stages (welcome → sign in → workspace) and sign-out; per-window Appearance panel state and the first theme choice.
-- `Tabs.swift`: native window tabs, one web view per tab, sharing Notion's cookies.
+- `Tabs.swift`: a window's tabs (one web view each, sharing Notion's cookies) and their restoration at launch.
 - `RootView.swift`: one window or tab; switches between stages, keeps theme injection in sync, restores its page, and presents sign-in sheets.
-- `Onboarding.swift` / `MainView.swift` / `ThemeViews.swift` / `ThemeEditor.swift`: onboarding screens, the workspace window and its Appearance panel, theme cards, and the theme editor.
+- `Onboarding.swift` / `MainView.swift` / `ThemeViews.swift` / `ThemeEditor.swift`: onboarding screens, the workspace window with its Notion-style header, tabs and Appearance panel, theme cards, and the theme editor.
 - `PotionTheme.swift`: validated theme model, curated presets, font registration, and versioned local persistence.
 - `ThemeInjection.swift`: scoped Notion styling, bundled font injection, style recovery after DOM replacement, the script that reports Notion's sidebar width and colors to the header, and navigation and sign-in URL policies.
 - `Workspace.swift`: persistent WKWebView, sign-in detection, sign-in popups, navigation, uploads, downloads, and error handling.

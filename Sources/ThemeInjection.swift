@@ -127,6 +127,8 @@ enum NavigationPolicy {
     ]
     /// First path components of Notion pages that exist before or during sign-in.
     private static let signInPaths: Set<String> = ["", "login", "signup", "logout", "onboarding", "sso", "loginwithemail", "verifynopopupblockerhtmlandredirect"]
+    /// Hosts of the Notion app itself, as opposed to notion.com's marketing and help pages or published notion.site pages.
+    private static func isAppHost(_ host: String) -> Bool { host == "app.notion.com" || host == "notion.so" || host.hasSuffix(".notion.so") }
 
     static func isNotion(_ url: URL) -> Bool {
         guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
@@ -152,9 +154,13 @@ enum NavigationPolicy {
 
     /// True for pages of a signed-in workspace, which is how Potion knows sign-in has finished.
     static func isWorkspacePage(_ url: URL) -> Bool {
-        guard isNotion(url), let host = url.host?.lowercased(), !host.hasSuffix("notion.site"), host != "identity.notion.com" else { return false }
+        guard isNotion(url), let host = url.host?.lowercased(), isAppHost(host) else { return false }
         let first = url.pathComponents.dropFirst().first?.lowercased() ?? ""
         return !signInPaths.contains(first) && !first.contains("popup") && !first.contains("callback")
+    }
+    /// Workspace pages worth reopening later. Notion's `/note/…` addresses are short-lived and can't be reopened.
+    static func isRestorable(_ url: URL) -> Bool {
+        isWorkspacePage(url) && url.pathComponents.dropFirst().first?.lowercased() != "note"
     }
     /// Notion opens OAuth sign-in through a sized popup on its own domain, which must stay a real window.
     static func isSignInPopup(_ url: URL, hasWindowSize: Bool) -> Bool {
