@@ -9,30 +9,89 @@
 /* Begin PBXBuildFile section */
 		041D5AEF70186220FDC2A128 /* lora-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4E608990F2FC06042925A95A /* lora-OFL.txt */; };
 		053E865EB85F2C36CBEF572A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A349F2E3488A9400C8E2ABA /* RootView.swift */; };
+		0C1322D688FAB7AE39311F56 /* ebgaramond-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 965D9C5E5FEF730211AA7717 /* ebgaramond-OFL.txt */; };
+		0D7F6EF02AD9993FA24D8783 /* librecaslondisplay-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1AA1F7F54DDDE7C2E5AB7891 /* librecaslondisplay-OFL.txt */; };
+		10701BCA392AC996EF309B0E /* Prata-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EDBA374B24335CAD3A3404C8 /* Prata-Regular.ttf */; };
+		1A42D9A8BE749950A8FF63B4 /* Figtree[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9612F9437C40D078323B5824 /* Figtree[wght].ttf */; };
+		1CE1C2DA8D4CC4385D274AC6 /* instrumentserif-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 95EC01D722148554D64B3E6F /* instrumentserif-OFL.txt */; };
+		2022DD2B4705F61CDE2AEB1D /* playfairdisplay-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7051D5C7E5B5C2548ED5CE71 /* playfairdisplay-OFL.txt */; };
+		2252B226FDCF9C7115FC7DD0 /* youngserif-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4222C9AFCBDD2416E68A7436 /* youngserif-OFL.txt */; };
+		278D516F06D54CB517BFFD02 /* AtkinsonHyperlegibleNext[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8458E51E85372C712FA3B594 /* AtkinsonHyperlegibleNext[wght].ttf */; };
+		2A6865474E987787B2199BD8 /* crimsonpro-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = B3493AED7E24B5AB87CE5142 /* crimsonpro-OFL.txt */; };
+		2FFC9541926DDD8B2A9F84C0 /* cormorant-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 97BC7D0EC4A78E8CC030C66F /* cormorant-OFL.txt */; };
+		35084CBFF69FACE860E0DCEC /* figtree-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 611AC13B4DAABC630E53414E /* figtree-OFL.txt */; };
+		352DB40E22D5C08955B253AB /* instrumentsans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 8867976154FD9D5966FA670F /* instrumentsans-OFL.txt */; };
+		384D65EEA0E792A4DC51543C /* Fraunces[SOFT,WONK,opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 19B9DBBD71109691FA2B6195 /* Fraunces[SOFT,WONK,opsz,wght].ttf */; };
+		388FB1F0D70CC0F3224E8F8C /* YoungSerif-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 51E6740F6074FF79E4FDDA25 /* YoungSerif-Regular.ttf */; };
+		3C710954B7DC3D12A7B2D1D9 /* worksans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 43BD1F59E1BF1ED22B7F88F9 /* worksans-OFL.txt */; };
 		3CFE746198546BB529AAF07F /* DMSans[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5F00D8B4393CA631A143238E /* DMSans[opsz,wght].ttf */; };
+		46E5473C97FF85CA254BCD05 /* BodoniModa[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0F936C754825374A93C9A8 /* BodoniModa[opsz,wght].ttf */; };
+		4708C919D69B9BCC826B0109 /* atkinsonhyperlegiblenext-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = BBFB60A8E1D43BEA7DCDDC4A /* atkinsonhyperlegiblenext-OFL.txt */; };
 		4A4CC4744D88D0FCF81303F7 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F58EBF1D890549D3C99ADD5 /* Onboarding.swift */; };
 		4D377CF9C1DE74EF368527DC /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DDDE9DF67920D6D9A58B9A /* Workspace.swift */; };
+		502DDB0ED68AF9725A2F8A2F /* karla-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7DC3DDCEBB5268FF8E6B79FB /* karla-OFL.txt */; };
+		52F15E43718000C27E811DCD /* Outfit[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3B08B1A32A15363ECCACA0D1 /* Outfit[wght].ttf */; };
 		551190FB0CE750DAD48C10D7 /* Tabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20E25D54D16F16457E4C005 /* Tabs.swift */; };
 		55D59B8FEC5A6F97F82A59EA /* Lora[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 14A7DBCD8E9ADF05221631C9 /* Lora[wght].ttf */; };
 		57DB2D8666882ACB8A6BDF7E /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A708136DB6D5819BB152E768 /* MainView.swift */; };
+		59B8F68DE298DA03CA8A30D2 /* literata-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 270B2A82F6DE097BD09F9D9A /* literata-OFL.txt */; };
 		5EC140A430159BF6FAC82100 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF3351E1362C1BC0586090C3 /* Assets.xcassets */; };
+		6156696A2C2E45E275C2ABD7 /* sourceserif4-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 0AB0C8E18797A06D3F07BA2C /* sourceserif4-OFL.txt */; };
+		6535D14389C4F765EE2ACA8F /* marcellus-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCD4C0AC7865826CDC43DA93 /* marcellus-OFL.txt */; };
 		67E1E3AB427FBF49C84C8D07 /* dmserifdisplay-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 28F3275DC4FCE18EAF10BBFB /* dmserifdisplay-OFL.txt */; };
 		6842A80AB49B7D55CC79A320 /* PotionTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AF883E4FB208E05FD566A36 /* PotionTheme.swift */; };
 		6A297650200444676D6DF97B /* PotionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2392A451FA8309481D04A012 /* PotionApp.swift */; };
 		6C82A6BE6CEA42CDD73F95AE /* dmsans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 288174211C3834F51CDCC243 /* dmsans-OFL.txt */; };
+		6E2BC5719FC3EE92E081B917 /* Jost[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 458D304E057A8677C8D412DF /* Jost[wght].ttf */; };
+		7062842A7C46558453BB0D0D /* Literata[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41234F42ED0055581DE5A202 /* Literata[opsz,wght].ttf */; };
+		7140A3912F5F93DC0D998C04 /* PlayfairDisplay[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1608E987B45325AB54926637 /* PlayfairDisplay[wght].ttf */; };
+		7191EC5F57DDC28322F6B350 /* Cormorant[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 25797D89D7161C3D0BE88511 /* Cormorant[wght].ttf */; };
+		750E1767AF43799782063550 /* albertsans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 81CA6141FECB3615D1C90339 /* albertsans-OFL.txt */; };
+		767F4E7FD194C27455BBFFFD /* bitter-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = F4A4ECFF0AE87A06AE547386 /* bitter-OFL.txt */; };
+		7879523442FB5F54483C290C /* CrimsonPro[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = BCE6F7ACD38C30B214F57E3E /* CrimsonPro[wght].ttf */; };
+		79414B38F428B34500D306D3 /* newsreader-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 49839B5B87DE73173664B250 /* newsreader-OFL.txt */; };
+		82F943A61EFFF5F42B2F1040 /* SourceSerif4[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7016E66DDDD6439DE2CB4A9C /* SourceSerif4[opsz,wght].ttf */; };
+		834CE6B5226AA9D950393FAB /* jetbrainsmono-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = FC7239CD9EC41C98D20930F1 /* jetbrainsmono-OFL.txt */; };
+		84F2A71F6B61C0F60DA4BE0B /* outfit-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = AC6866A66DB0D6B021E95B3B /* outfit-OFL.txt */; };
+		861380918EF14254BF139125 /* inter-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 30376338EA9311CCF6E12D61 /* inter-OFL.txt */; };
 		8A7EFDBAA31F58AAE956D504 /* SourceSans3[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 58F71218A3146D364A5A1CE3 /* SourceSans3[wght].ttf */; };
+		8BFB25847056573EDCDF016B /* mulish-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5FC424FCC1E77E34ED164BF4 /* mulish-OFL.txt */; };
+		8F7C332C86BCAEBBBE0A680E /* InstrumentSans[wdth,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = CC3FFBCAAFBBD0AB9279C876 /* InstrumentSans[wdth,wght].ttf */; };
+		9242262A5EFC42FB5695E36D /* Bitter[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 600D780C5A761CDF8857E9C6 /* Bitter[wght].ttf */; };
+		98323731D2945BC503C93D1E /* EBGaramond[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9742C7F42E11AF09E0A81B69 /* EBGaramond[wght].ttf */; };
+		9D575E6B62939B6574479FF7 /* prata-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7269B628208A297E38F2CF13 /* prata-OFL.txt */; };
+		9F2CD7296478C8C94598C41F /* Mulish[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6146C5BB34499613735573D6 /* Mulish[wght].ttf */; };
+		A37408DF37B16337EC5C91C9 /* jost-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = B66241279EE13A94DA9EE867 /* jost-OFL.txt */; };
 		A855C90902F12F7D5A576453 /* Manrope[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */; };
+		AABF266C243564B43AC57A2B /* hankengrotesk-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 83C8AC895B2226637833F629 /* hankengrotesk-OFL.txt */; };
+		ABAEB3C878B4E9F3391AA08D /* Sora[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = A08E76EAF47FFB12FE448AFE /* Sora[wght].ttf */; };
 		ABC346D436ED365CC0D311F7 /* AppFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD689479AD9B3A68B4E5E93F /* AppFlow.swift */; };
+		AD310D048E24BE5BCB2D136E /* gildadisplay-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = B21EE0049E3030F0A656CEBB /* gildadisplay-OFL.txt */; };
 		B0D2C38D68F8AACAD7357843 /* DMSerifDisplay-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */; };
+		B11CF7244A9CB9A395575D84 /* Inter[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 53BDF8659C210B227E8A1246 /* Inter[opsz,wght].ttf */; };
 		B12EEA8670D6D5B0E09BB9BF /* ThemeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E76EACAE76AA548E122A67 /* ThemeViews.swift */; };
 		B1FA16494C557BD28AD220FF /* Preview.html in Resources */ = {isa = PBXBuildFile; fileRef = 0AC5D733B57EAE4D1C84A082 /* Preview.html */; };
+		B47747DFF6C86033044DB23C /* bodonimoda-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = F8800889931B6368AA6FDCC8 /* bodonimoda-OFL.txt */; };
+		C2C14F23EF659BDCC5B4587F /* InstrumentSerif-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0E78EA444C22162B31955D8D /* InstrumentSerif-Regular.ttf */; };
+		CBBEC3FBDD610D539C39FCC1 /* LibreCaslonDisplay-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D39F587FBB60F1788E807BBA /* LibreCaslonDisplay-Regular.ttf */; };
+		CCE96DA0DF71CB191331E794 /* JetBrainsMono[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = CFEF14CAAE7797170FF63E8F /* JetBrainsMono[wght].ttf */; };
 		CDA620D103F5E14626898AA0 /* ThemeEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112B55E29F5EF615C76B12AF /* ThemeEditor.swift */; };
+		D2E698FBAA6EA5B92E3E3A0D /* Newsreader[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = BD4ED934F869568D5DF3F548 /* Newsreader[opsz,wght].ttf */; };
 		D3F76781E3E348B50E41F45D /* SpaceGrotesk[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */; };
+		D660D514F21375AB047ACE14 /* WorkSans[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 532A815C58F03DE7FCCAF8FA /* WorkSans[wght].ttf */; };
+		DB9295DB3B408C47C37C567C /* sora-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = E207B34C69E0986E46A29713 /* sora-OFL.txt */; };
+		DBD4F2200F1614F9223C535B /* fraunces-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 03C15A45F157AEBE8930BB67 /* fraunces-OFL.txt */; };
 		DE7CB886CC10F38064C99100 /* manrope-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 02121AF1CD660FDF52116E53 /* manrope-OFL.txt */; };
+		DFDED2940C2EFE175C463365 /* Marcellus-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A80168DBDF44A42644EE0681 /* Marcellus-Regular.ttf */; };
+		E2234EC1D6B690864542840C /* Karla[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9AC078E07C74EF2F7130CBA0 /* Karla[wght].ttf */; };
 		E47A076C24F00248F3A64148 /* ThemeInjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29397D3567753A98E1F9B150 /* ThemeInjection.swift */; };
 		EC1C3005C0347C6DE9A97481 /* spacegrotesk-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 98D138644FDCCF87B42A9A37 /* spacegrotesk-OFL.txt */; };
 		EE4D03A8676C3E26579D777B /* PotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7955BB74DCA58B2FE4AF75 /* PotionTests.swift */; };
+		EEEE599EC01965486B58AF47 /* HankenGrotesk[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = A454C3905757ECDAD196ED10 /* HankenGrotesk[wght].ttf */; };
+		F30E4B0FC91E3EE6E2C711F8 /* GildaDisplay-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E3C8088685DC5FFF5F6008F8 /* GildaDisplay-Regular.ttf */; };
 		F4CC5AD979446BBE2D62A78E /* sourcesans3-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3277198A37808B701797157F /* sourcesans3-OFL.txt */; };
+		F4D36A5648A94FEDEED58A96 /* AlbertSans[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C22AC0390B8E32AFB76186C /* AlbertSans[wght].ttf */; };
+		FC218842BFFE46EF3DA41904 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CF9B70F0117C7F9E0598031A /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,32 +107,91 @@
 /* Begin PBXFileReference section */
 		00E76EACAE76AA548E122A67 /* ThemeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeViews.swift; sourceTree = "<group>"; };
 		02121AF1CD660FDF52116E53 /* manrope-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "manrope-OFL.txt"; sourceTree = "<group>"; };
+		03C15A45F157AEBE8930BB67 /* fraunces-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "fraunces-OFL.txt"; sourceTree = "<group>"; };
 		0A349F2E3488A9400C8E2ABA /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		0AB0C8E18797A06D3F07BA2C /* sourceserif4-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "sourceserif4-OFL.txt"; sourceTree = "<group>"; };
 		0AC5D733B57EAE4D1C84A082 /* Preview.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Preview.html; sourceTree = "<group>"; };
+		0E78EA444C22162B31955D8D /* InstrumentSerif-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "InstrumentSerif-Regular.ttf"; sourceTree = "<group>"; };
 		112B55E29F5EF615C76B12AF /* ThemeEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeEditor.swift; sourceTree = "<group>"; };
 		14A7DBCD8E9ADF05221631C9 /* Lora[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lora[wght].ttf"; sourceTree = "<group>"; };
+		1608E987B45325AB54926637 /* PlayfairDisplay[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlayfairDisplay[wght].ttf"; sourceTree = "<group>"; };
+		19B9DBBD71109691FA2B6195 /* Fraunces[SOFT,WONK,opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces[SOFT,WONK,opsz,wght].ttf"; sourceTree = "<group>"; };
+		1AA1F7F54DDDE7C2E5AB7891 /* librecaslondisplay-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "librecaslondisplay-OFL.txt"; sourceTree = "<group>"; };
+		1C22AC0390B8E32AFB76186C /* AlbertSans[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AlbertSans[wght].ttf"; sourceTree = "<group>"; };
 		2392A451FA8309481D04A012 /* PotionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionApp.swift; sourceTree = "<group>"; };
+		25797D89D7161C3D0BE88511 /* Cormorant[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cormorant[wght].ttf"; sourceTree = "<group>"; };
+		270B2A82F6DE097BD09F9D9A /* literata-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "literata-OFL.txt"; sourceTree = "<group>"; };
 		288174211C3834F51CDCC243 /* dmsans-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "dmsans-OFL.txt"; sourceTree = "<group>"; };
 		28F3275DC4FCE18EAF10BBFB /* dmserifdisplay-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "dmserifdisplay-OFL.txt"; sourceTree = "<group>"; };
 		29397D3567753A98E1F9B150 /* ThemeInjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeInjection.swift; sourceTree = "<group>"; };
+		30376338EA9311CCF6E12D61 /* inter-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "inter-OFL.txt"; sourceTree = "<group>"; };
 		3277198A37808B701797157F /* sourcesans3-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "sourcesans3-OFL.txt"; sourceTree = "<group>"; };
+		3B08B1A32A15363ECCACA0D1 /* Outfit[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit[wght].ttf"; sourceTree = "<group>"; };
 		3EE5849EBEA4E9480EB9B7A2 /* Potion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Potion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		41234F42ED0055581DE5A202 /* Literata[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Literata[opsz,wght].ttf"; sourceTree = "<group>"; };
+		4222C9AFCBDD2416E68A7436 /* youngserif-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "youngserif-OFL.txt"; sourceTree = "<group>"; };
+		43BD1F59E1BF1ED22B7F88F9 /* worksans-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "worksans-OFL.txt"; sourceTree = "<group>"; };
+		458D304E057A8677C8D412DF /* Jost[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Jost[wght].ttf"; sourceTree = "<group>"; };
 		45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSerifDisplay-Regular.ttf"; sourceTree = "<group>"; };
+		49839B5B87DE73173664B250 /* newsreader-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "newsreader-OFL.txt"; sourceTree = "<group>"; };
 		4E608990F2FC06042925A95A /* lora-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lora-OFL.txt"; sourceTree = "<group>"; };
 		4F7955BB74DCA58B2FE4AF75 /* PotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionTests.swift; sourceTree = "<group>"; };
+		51E6740F6074FF79E4FDDA25 /* YoungSerif-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "YoungSerif-Regular.ttf"; sourceTree = "<group>"; };
+		532A815C58F03DE7FCCAF8FA /* WorkSans[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "WorkSans[wght].ttf"; sourceTree = "<group>"; };
+		53BDF8659C210B227E8A1246 /* Inter[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter[opsz,wght].ttf"; sourceTree = "<group>"; };
 		58F71218A3146D364A5A1CE3 /* SourceSans3[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceSans3[wght].ttf"; sourceTree = "<group>"; };
+		5A0F936C754825374A93C9A8 /* BodoniModa[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BodoniModa[opsz,wght].ttf"; sourceTree = "<group>"; };
 		5CE0A4C45E3E48FFE4CEC579 /* PotionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PotionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F00D8B4393CA631A143238E /* DMSans[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans[opsz,wght].ttf"; sourceTree = "<group>"; };
+		5FC424FCC1E77E34ED164BF4 /* mulish-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "mulish-OFL.txt"; sourceTree = "<group>"; };
+		600D780C5A761CDF8857E9C6 /* Bitter[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Bitter[wght].ttf"; sourceTree = "<group>"; };
+		611AC13B4DAABC630E53414E /* figtree-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "figtree-OFL.txt"; sourceTree = "<group>"; };
+		6146C5BB34499613735573D6 /* Mulish[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Mulish[wght].ttf"; sourceTree = "<group>"; };
 		627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope[wght].ttf"; sourceTree = "<group>"; };
 		67DDDE9DF67920D6D9A58B9A /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
+		7016E66DDDD6439DE2CB4A9C /* SourceSerif4[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceSerif4[opsz,wght].ttf"; sourceTree = "<group>"; };
+		7051D5C7E5B5C2548ED5CE71 /* playfairdisplay-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "playfairdisplay-OFL.txt"; sourceTree = "<group>"; };
+		7269B628208A297E38F2CF13 /* prata-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "prata-OFL.txt"; sourceTree = "<group>"; };
+		7DC3DDCEBB5268FF8E6B79FB /* karla-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "karla-OFL.txt"; sourceTree = "<group>"; };
 		7F58EBF1D890549D3C99ADD5 /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
+		81CA6141FECB3615D1C90339 /* albertsans-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "albertsans-OFL.txt"; sourceTree = "<group>"; };
+		83C8AC895B2226637833F629 /* hankengrotesk-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "hankengrotesk-OFL.txt"; sourceTree = "<group>"; };
+		8458E51E85372C712FA3B594 /* AtkinsonHyperlegibleNext[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AtkinsonHyperlegibleNext[wght].ttf"; sourceTree = "<group>"; };
+		8867976154FD9D5966FA670F /* instrumentsans-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "instrumentsans-OFL.txt"; sourceTree = "<group>"; };
 		8AF883E4FB208E05FD566A36 /* PotionTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionTheme.swift; sourceTree = "<group>"; };
+		95EC01D722148554D64B3E6F /* instrumentserif-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "instrumentserif-OFL.txt"; sourceTree = "<group>"; };
+		9612F9437C40D078323B5824 /* Figtree[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Figtree[wght].ttf"; sourceTree = "<group>"; };
+		965D9C5E5FEF730211AA7717 /* ebgaramond-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ebgaramond-OFL.txt"; sourceTree = "<group>"; };
+		9742C7F42E11AF09E0A81B69 /* EBGaramond[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "EBGaramond[wght].ttf"; sourceTree = "<group>"; };
 		97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SpaceGrotesk[wght].ttf"; sourceTree = "<group>"; };
+		97BC7D0EC4A78E8CC030C66F /* cormorant-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "cormorant-OFL.txt"; sourceTree = "<group>"; };
 		98D138644FDCCF87B42A9A37 /* spacegrotesk-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "spacegrotesk-OFL.txt"; sourceTree = "<group>"; };
+		9AC078E07C74EF2F7130CBA0 /* Karla[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Karla[wght].ttf"; sourceTree = "<group>"; };
+		A08E76EAF47FFB12FE448AFE /* Sora[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora[wght].ttf"; sourceTree = "<group>"; };
+		A454C3905757ECDAD196ED10 /* HankenGrotesk[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "HankenGrotesk[wght].ttf"; sourceTree = "<group>"; };
 		A708136DB6D5819BB152E768 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		A80168DBDF44A42644EE0681 /* Marcellus-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Marcellus-Regular.ttf"; sourceTree = "<group>"; };
+		AC6866A66DB0D6B021E95B3B /* outfit-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "outfit-OFL.txt"; sourceTree = "<group>"; };
+		B21EE0049E3030F0A656CEBB /* gildadisplay-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gildadisplay-OFL.txt"; sourceTree = "<group>"; };
+		B3493AED7E24B5AB87CE5142 /* crimsonpro-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "crimsonpro-OFL.txt"; sourceTree = "<group>"; };
+		B66241279EE13A94DA9EE867 /* jost-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "jost-OFL.txt"; sourceTree = "<group>"; };
+		BBFB60A8E1D43BEA7DCDDC4A /* atkinsonhyperlegiblenext-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "atkinsonhyperlegiblenext-OFL.txt"; sourceTree = "<group>"; };
+		BCD4C0AC7865826CDC43DA93 /* marcellus-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "marcellus-OFL.txt"; sourceTree = "<group>"; };
+		BCE6F7ACD38C30B214F57E3E /* CrimsonPro[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CrimsonPro[wght].ttf"; sourceTree = "<group>"; };
+		BD4ED934F869568D5DF3F548 /* Newsreader[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Newsreader[opsz,wght].ttf"; sourceTree = "<group>"; };
 		BF3351E1362C1BC0586090C3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CC3FFBCAAFBBD0AB9279C876 /* InstrumentSans[wdth,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "InstrumentSans[wdth,wght].ttf"; sourceTree = "<group>"; };
 		CD689479AD9B3A68B4E5E93F /* AppFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFlow.swift; sourceTree = "<group>"; };
+		CF9B70F0117C7F9E0598031A /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		CFEF14CAAE7797170FF63E8F /* JetBrainsMono[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono[wght].ttf"; sourceTree = "<group>"; };
+		D39F587FBB60F1788E807BBA /* LibreCaslonDisplay-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "LibreCaslonDisplay-Regular.ttf"; sourceTree = "<group>"; };
+		E207B34C69E0986E46A29713 /* sora-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "sora-OFL.txt"; sourceTree = "<group>"; };
+		E3C8088685DC5FFF5F6008F8 /* GildaDisplay-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GildaDisplay-Regular.ttf"; sourceTree = "<group>"; };
+		EDBA374B24335CAD3A3404C8 /* Prata-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Prata-Regular.ttf"; sourceTree = "<group>"; };
 		F20E25D54D16F16457E4C005 /* Tabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tabs.swift; sourceTree = "<group>"; };
+		F4A4ECFF0AE87A06AE547386 /* bitter-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "bitter-OFL.txt"; sourceTree = "<group>"; };
+		F8800889931B6368AA6FDCC8 /* bodonimoda-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "bodonimoda-OFL.txt"; sourceTree = "<group>"; };
+		FC7239CD9EC41C98D20930F1 /* jetbrainsmono-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "jetbrainsmono-OFL.txt"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -106,6 +224,7 @@
 		5637B9F1DCDFC83715B10A28 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				CF9B70F0117C7F9E0598031A /* AppIcon.icon */,
 				BF3351E1362C1BC0586090C3 /* Assets.xcassets */,
 				0AC5D733B57EAE4D1C84A082 /* Preview.html */,
 				B5A67D787866D4BF64820FD3 /* Fonts */,
@@ -125,18 +244,76 @@
 		B5A67D787866D4BF64820FD3 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
+				81CA6141FECB3615D1C90339 /* albertsans-OFL.txt */,
+				1C22AC0390B8E32AFB76186C /* AlbertSans[wght].ttf */,
+				BBFB60A8E1D43BEA7DCDDC4A /* atkinsonhyperlegiblenext-OFL.txt */,
+				8458E51E85372C712FA3B594 /* AtkinsonHyperlegibleNext[wght].ttf */,
+				F4A4ECFF0AE87A06AE547386 /* bitter-OFL.txt */,
+				600D780C5A761CDF8857E9C6 /* Bitter[wght].ttf */,
+				F8800889931B6368AA6FDCC8 /* bodonimoda-OFL.txt */,
+				5A0F936C754825374A93C9A8 /* BodoniModa[opsz,wght].ttf */,
+				97BC7D0EC4A78E8CC030C66F /* cormorant-OFL.txt */,
+				25797D89D7161C3D0BE88511 /* Cormorant[wght].ttf */,
+				B3493AED7E24B5AB87CE5142 /* crimsonpro-OFL.txt */,
+				BCE6F7ACD38C30B214F57E3E /* CrimsonPro[wght].ttf */,
 				288174211C3834F51CDCC243 /* dmsans-OFL.txt */,
 				5F00D8B4393CA631A143238E /* DMSans[opsz,wght].ttf */,
 				28F3275DC4FCE18EAF10BBFB /* dmserifdisplay-OFL.txt */,
 				45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */,
+				965D9C5E5FEF730211AA7717 /* ebgaramond-OFL.txt */,
+				9742C7F42E11AF09E0A81B69 /* EBGaramond[wght].ttf */,
+				611AC13B4DAABC630E53414E /* figtree-OFL.txt */,
+				9612F9437C40D078323B5824 /* Figtree[wght].ttf */,
+				03C15A45F157AEBE8930BB67 /* fraunces-OFL.txt */,
+				19B9DBBD71109691FA2B6195 /* Fraunces[SOFT,WONK,opsz,wght].ttf */,
+				B21EE0049E3030F0A656CEBB /* gildadisplay-OFL.txt */,
+				E3C8088685DC5FFF5F6008F8 /* GildaDisplay-Regular.ttf */,
+				83C8AC895B2226637833F629 /* hankengrotesk-OFL.txt */,
+				A454C3905757ECDAD196ED10 /* HankenGrotesk[wght].ttf */,
+				8867976154FD9D5966FA670F /* instrumentsans-OFL.txt */,
+				CC3FFBCAAFBBD0AB9279C876 /* InstrumentSans[wdth,wght].ttf */,
+				95EC01D722148554D64B3E6F /* instrumentserif-OFL.txt */,
+				0E78EA444C22162B31955D8D /* InstrumentSerif-Regular.ttf */,
+				30376338EA9311CCF6E12D61 /* inter-OFL.txt */,
+				53BDF8659C210B227E8A1246 /* Inter[opsz,wght].ttf */,
+				FC7239CD9EC41C98D20930F1 /* jetbrainsmono-OFL.txt */,
+				CFEF14CAAE7797170FF63E8F /* JetBrainsMono[wght].ttf */,
+				B66241279EE13A94DA9EE867 /* jost-OFL.txt */,
+				458D304E057A8677C8D412DF /* Jost[wght].ttf */,
+				7DC3DDCEBB5268FF8E6B79FB /* karla-OFL.txt */,
+				9AC078E07C74EF2F7130CBA0 /* Karla[wght].ttf */,
+				1AA1F7F54DDDE7C2E5AB7891 /* librecaslondisplay-OFL.txt */,
+				D39F587FBB60F1788E807BBA /* LibreCaslonDisplay-Regular.ttf */,
+				270B2A82F6DE097BD09F9D9A /* literata-OFL.txt */,
+				41234F42ED0055581DE5A202 /* Literata[opsz,wght].ttf */,
 				4E608990F2FC06042925A95A /* lora-OFL.txt */,
 				14A7DBCD8E9ADF05221631C9 /* Lora[wght].ttf */,
 				02121AF1CD660FDF52116E53 /* manrope-OFL.txt */,
 				627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */,
+				BCD4C0AC7865826CDC43DA93 /* marcellus-OFL.txt */,
+				A80168DBDF44A42644EE0681 /* Marcellus-Regular.ttf */,
+				5FC424FCC1E77E34ED164BF4 /* mulish-OFL.txt */,
+				6146C5BB34499613735573D6 /* Mulish[wght].ttf */,
+				49839B5B87DE73173664B250 /* newsreader-OFL.txt */,
+				BD4ED934F869568D5DF3F548 /* Newsreader[opsz,wght].ttf */,
+				AC6866A66DB0D6B021E95B3B /* outfit-OFL.txt */,
+				3B08B1A32A15363ECCACA0D1 /* Outfit[wght].ttf */,
+				7051D5C7E5B5C2548ED5CE71 /* playfairdisplay-OFL.txt */,
+				1608E987B45325AB54926637 /* PlayfairDisplay[wght].ttf */,
+				7269B628208A297E38F2CF13 /* prata-OFL.txt */,
+				EDBA374B24335CAD3A3404C8 /* Prata-Regular.ttf */,
+				E207B34C69E0986E46A29713 /* sora-OFL.txt */,
+				A08E76EAF47FFB12FE448AFE /* Sora[wght].ttf */,
 				3277198A37808B701797157F /* sourcesans3-OFL.txt */,
 				58F71218A3146D364A5A1CE3 /* SourceSans3[wght].ttf */,
+				0AB0C8E18797A06D3F07BA2C /* sourceserif4-OFL.txt */,
+				7016E66DDDD6439DE2CB4A9C /* SourceSerif4[opsz,wght].ttf */,
 				98D138644FDCCF87B42A9A37 /* spacegrotesk-OFL.txt */,
 				97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */,
+				43BD1F59E1BF1ED22B7F88F9 /* worksans-OFL.txt */,
+				532A815C58F03DE7FCCAF8FA /* WorkSans[wght].ttf */,
+				4222C9AFCBDD2416E68A7436 /* youngserif-OFL.txt */,
+				51E6740F6074FF79E4FDDA25 /* YoungSerif-Regular.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -232,20 +409,79 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F4D36A5648A94FEDEED58A96 /* AlbertSans[wght].ttf in Resources */,
+				FC218842BFFE46EF3DA41904 /* AppIcon.icon in Resources */,
 				5EC140A430159BF6FAC82100 /* Assets.xcassets in Resources */,
+				278D516F06D54CB517BFFD02 /* AtkinsonHyperlegibleNext[wght].ttf in Resources */,
+				9242262A5EFC42FB5695E36D /* Bitter[wght].ttf in Resources */,
+				46E5473C97FF85CA254BCD05 /* BodoniModa[opsz,wght].ttf in Resources */,
+				7191EC5F57DDC28322F6B350 /* Cormorant[wght].ttf in Resources */,
+				7879523442FB5F54483C290C /* CrimsonPro[wght].ttf in Resources */,
 				3CFE746198546BB529AAF07F /* DMSans[opsz,wght].ttf in Resources */,
 				B0D2C38D68F8AACAD7357843 /* DMSerifDisplay-Regular.ttf in Resources */,
+				98323731D2945BC503C93D1E /* EBGaramond[wght].ttf in Resources */,
+				1A42D9A8BE749950A8FF63B4 /* Figtree[wght].ttf in Resources */,
+				384D65EEA0E792A4DC51543C /* Fraunces[SOFT,WONK,opsz,wght].ttf in Resources */,
+				F30E4B0FC91E3EE6E2C711F8 /* GildaDisplay-Regular.ttf in Resources */,
+				EEEE599EC01965486B58AF47 /* HankenGrotesk[wght].ttf in Resources */,
+				8F7C332C86BCAEBBBE0A680E /* InstrumentSans[wdth,wght].ttf in Resources */,
+				C2C14F23EF659BDCC5B4587F /* InstrumentSerif-Regular.ttf in Resources */,
+				B11CF7244A9CB9A395575D84 /* Inter[opsz,wght].ttf in Resources */,
+				CCE96DA0DF71CB191331E794 /* JetBrainsMono[wght].ttf in Resources */,
+				6E2BC5719FC3EE92E081B917 /* Jost[wght].ttf in Resources */,
+				E2234EC1D6B690864542840C /* Karla[wght].ttf in Resources */,
+				CBBEC3FBDD610D539C39FCC1 /* LibreCaslonDisplay-Regular.ttf in Resources */,
+				7062842A7C46558453BB0D0D /* Literata[opsz,wght].ttf in Resources */,
 				55D59B8FEC5A6F97F82A59EA /* Lora[wght].ttf in Resources */,
 				A855C90902F12F7D5A576453 /* Manrope[wght].ttf in Resources */,
+				DFDED2940C2EFE175C463365 /* Marcellus-Regular.ttf in Resources */,
+				9F2CD7296478C8C94598C41F /* Mulish[wght].ttf in Resources */,
+				D2E698FBAA6EA5B92E3E3A0D /* Newsreader[opsz,wght].ttf in Resources */,
+				52F15E43718000C27E811DCD /* Outfit[wght].ttf in Resources */,
+				7140A3912F5F93DC0D998C04 /* PlayfairDisplay[wght].ttf in Resources */,
+				10701BCA392AC996EF309B0E /* Prata-Regular.ttf in Resources */,
 				B1FA16494C557BD28AD220FF /* Preview.html in Resources */,
+				ABAEB3C878B4E9F3391AA08D /* Sora[wght].ttf in Resources */,
 				8A7EFDBAA31F58AAE956D504 /* SourceSans3[wght].ttf in Resources */,
+				82F943A61EFFF5F42B2F1040 /* SourceSerif4[opsz,wght].ttf in Resources */,
 				D3F76781E3E348B50E41F45D /* SpaceGrotesk[wght].ttf in Resources */,
+				D660D514F21375AB047ACE14 /* WorkSans[wght].ttf in Resources */,
+				388FB1F0D70CC0F3224E8F8C /* YoungSerif-Regular.ttf in Resources */,
+				750E1767AF43799782063550 /* albertsans-OFL.txt in Resources */,
+				4708C919D69B9BCC826B0109 /* atkinsonhyperlegiblenext-OFL.txt in Resources */,
+				767F4E7FD194C27455BBFFFD /* bitter-OFL.txt in Resources */,
+				B47747DFF6C86033044DB23C /* bodonimoda-OFL.txt in Resources */,
+				2FFC9541926DDD8B2A9F84C0 /* cormorant-OFL.txt in Resources */,
+				2A6865474E987787B2199BD8 /* crimsonpro-OFL.txt in Resources */,
 				6C82A6BE6CEA42CDD73F95AE /* dmsans-OFL.txt in Resources */,
 				67E1E3AB427FBF49C84C8D07 /* dmserifdisplay-OFL.txt in Resources */,
+				0C1322D688FAB7AE39311F56 /* ebgaramond-OFL.txt in Resources */,
+				35084CBFF69FACE860E0DCEC /* figtree-OFL.txt in Resources */,
+				DBD4F2200F1614F9223C535B /* fraunces-OFL.txt in Resources */,
+				AD310D048E24BE5BCB2D136E /* gildadisplay-OFL.txt in Resources */,
+				AABF266C243564B43AC57A2B /* hankengrotesk-OFL.txt in Resources */,
+				352DB40E22D5C08955B253AB /* instrumentsans-OFL.txt in Resources */,
+				1CE1C2DA8D4CC4385D274AC6 /* instrumentserif-OFL.txt in Resources */,
+				861380918EF14254BF139125 /* inter-OFL.txt in Resources */,
+				834CE6B5226AA9D950393FAB /* jetbrainsmono-OFL.txt in Resources */,
+				A37408DF37B16337EC5C91C9 /* jost-OFL.txt in Resources */,
+				502DDB0ED68AF9725A2F8A2F /* karla-OFL.txt in Resources */,
+				0D7F6EF02AD9993FA24D8783 /* librecaslondisplay-OFL.txt in Resources */,
+				59B8F68DE298DA03CA8A30D2 /* literata-OFL.txt in Resources */,
 				041D5AEF70186220FDC2A128 /* lora-OFL.txt in Resources */,
 				DE7CB886CC10F38064C99100 /* manrope-OFL.txt in Resources */,
+				6535D14389C4F765EE2ACA8F /* marcellus-OFL.txt in Resources */,
+				8BFB25847056573EDCDF016B /* mulish-OFL.txt in Resources */,
+				79414B38F428B34500D306D3 /* newsreader-OFL.txt in Resources */,
+				84F2A71F6B61C0F60DA4BE0B /* outfit-OFL.txt in Resources */,
+				2022DD2B4705F61CDE2AEB1D /* playfairdisplay-OFL.txt in Resources */,
+				9D575E6B62939B6574479FF7 /* prata-OFL.txt in Resources */,
+				DB9295DB3B408C47C37C567C /* sora-OFL.txt in Resources */,
 				F4CC5AD979446BBE2D62A78E /* sourcesans3-OFL.txt in Resources */,
+				6156696A2C2E45E275C2ABD7 /* sourceserif4-OFL.txt in Resources */,
 				EC1C3005C0347C6DE9A97481 /* spacegrotesk-OFL.txt in Resources */,
+				3C710954B7DC3D12A7B2D1D9 /* worksans-OFL.txt in Resources */,
+				2252B226FDCF9C7115FC7DD0 /* youngserif-OFL.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
