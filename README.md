@@ -2,7 +2,13 @@
 
 A native macOS home for Notion, with a quieter palette and typography you can make your own. Built with SwiftUI, AppKit, and WKWebView; macOS 15 or later, with Liquid Glass on macOS 26.
 
-## Run
+## Download
+
+**[Download Potion for Mac](https://github.com/onepixelaway/potion/releases/latest/download/Potion.dmg)** (macOS 15 or later, Apple silicon and Intel)
+
+Open the disk image and drag Potion into Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click.
+
+## Run from source
 
 Open `Potion.xcodeproj`, select the Potion scheme, and run. Or:
 
@@ -98,4 +104,4 @@ Tests cover persistence/edit/delete behavior and migration of older themes, the 
 
 Notion’s DOM and CSP can change; the selectors in `ThemeInjection.swift` may need maintenance. Intentional Notion block colors, media, and code fonts are preserved. Some nested UI and database surfaces may retain their original colors. The login page and the Google sign-in popup are verified up to entering credentials; completing sign-in, SSO, uploads, and downloads require testing with your own account. Passkeys need a browser entitlement and aren't available in Potion; use email or another provider. A sign-in popup that starts on an identity provider outside the built-in list opens in your browser instead.
 
-Local builds are not notarized. Distribution to other Macs requires your Developer ID signing and Apple notarization. Potion is independent and is not affiliated with Notion.
+Local builds are not notarized. `./scripts/release.sh` builds the downloadable disk image: it signs Potion with the team's Developer ID through the Apple account signed in to Xcode, waits for Apple's notarization, and writes `build/Potion.dmg`. Potion is independent and is not affiliated with Notion.
