@@ -13,8 +13,7 @@ struct AuthPopup: Identifiable {
     static let loginURL = URL(string: "https://app.notion.com/login")!
     static let homeURL = URL(string: "https://app.notion.com/")!
     /// The offline sample page. Used to verify theme rendering without a Notion account.
-    static let previewURL = Bundle.main.url(forResource: "Preview", withExtension: "html")
-    private static let lastURLKey = "potion.lastNotionURL"
+    nonisolated static let previewURL = Bundle.main.url(forResource: "Preview", withExtension: "html")
 
     @ObservationIgnored let webView: WKWebView
     private(set) var isLoading = false
@@ -47,7 +46,7 @@ struct AuthPopup: Identifiable {
         get { style.layout }
         set { style.layout = newValue }
     }
-    /// The current workspace page, restored per window and tab on relaunch.
+    /// The current workspace page, which the window saves so its tabs reopen on relaunch.
     @ObservationIgnored private(set) var pageURL: URL? { didSet { onPageChange?() } }
     /// Called after `pageURL` changes. Set by the window hosting this workspace.
     @ObservationIgnored var onPageChange: (() -> Void)?
@@ -107,13 +106,8 @@ struct AuthPopup: Identifiable {
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
     }
     func openLogin() { load(Self.loginURL) }
-    /// Opens a Notion page, or else the last page, or else the login page (Notion sends signed-in people onward).
-    func open(_ url: URL? = nil) {
-        let saved = UserDefaults.standard.url(forKey: Self.lastURLKey)
-        let requested = url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil }
-        let restorable = saved.flatMap { NavigationPolicy.isRestorable($0) ? $0 : nil }
-        load(requested ?? restorable ?? Self.loginURL)
-    }
+    /// Opens a Notion page, or else the login page, which sends signed-in people on to their workspace.
+    func open(_ url: URL? = nil) { load(url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil } ?? Self.loginURL) }
     private func load(_ url: URL) {
         error = nil
         webView.load(URLRequest(url: url))
@@ -129,7 +123,6 @@ struct AuthPopup: Identifiable {
     /// Removes every cookie and cache Potion's web views have stored. All windows share this data store.
     static func removeWebsiteData() async {
         await WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
-        UserDefaults.standard.removeObject(forKey: lastURLKey)
     }
     func returnToLogin() {
         closeAuthPopup()
@@ -159,7 +152,6 @@ struct AuthPopup: Identifiable {
         let signedIn = NavigationPolicy.isWorkspacePage(url)
         if signedIn, NavigationPolicy.isRestorable(url), let safeURL = NavigationPolicy.withoutQuery(url), safeURL != pageURL {
             pageURL = safeURL
-            UserDefaults.standard.set(safeURL, forKey: Self.lastURLKey)
         }
         if NavigationPolicy.isNotion(url) { update(\.isSignedIn, signedIn) }
     }

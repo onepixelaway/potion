@@ -5,34 +5,34 @@ import SwiftUI
 /// preview live on every tab in the window (through `AppearanceState.preview`); Save keeps them, and Cancel or
 /// closing the editor shows the saved theme again.
 struct ThemeEditor: View {
-    let original: PotionTheme
+    @Binding var edit: ThemeEdit
     @ObservedObject var store: ThemeStore
     @ObservedObject var appearance: AppearanceState
-    @State private var draft: PotionTheme
     @State private var editsColors: Bool
     @State private var editsFonts: Bool
 
-    init(original: PotionTheme, store: ThemeStore, appearance: AppearanceState) {
-        self.original = original
+    init(edit: Binding<ThemeEdit>, store: ThemeStore, appearance: AppearanceState) {
+        _edit = edit
         self.store = store
         self.appearance = appearance
-        _draft = State(initialValue: original)
         // A theme that already has its own colors or fonts opens with them showing.
+        let original = edit.wrappedValue.original
         _editsColors = State(initialValue: !original.colors.isPreset)
         _editsFonts = State(initialValue: !original.fonts.isPreset)
     }
-    private var isNew: Bool { !store.customs.contains { $0.id == original.id } }
+    private var draft: PotionTheme { edit.draft }
+    private var isNew: Bool { !store.customs.contains { $0.id == edit.original.id } }
 
     var body: some View {
         Form {
             Section {
-                TextField("Name", text: $draft.name)
+                TextField("Name", text: $edit.draft.name)
             } header: {
                 Text(isNew ? "New Theme" : "Edit Theme").font(.title3.bold()).foregroundStyle(.primary)
             }
             Section {
                 setRow(isEditing: $editsColors, help: "Adjust each color") {
-                    Picker("Colors", selection: $draft.colors) {
+                    Picker("Colors", selection: $edit.draft.colors) {
                         ForEach(PotionTheme.appearanceGroups, id: \.title) { group in
                             Section(group.title) {
                                 ForEach(group.themes) { theme in
@@ -52,7 +52,7 @@ struct ThemeEditor: View {
             }
             Section {
                 setRow(isEditing: $editsFonts, help: "Adjust fonts, size and spacing") {
-                    Picker("Fonts", selection: $draft.fonts) {
+                    Picker("Fonts", selection: $edit.draft.fonts) {
                         ForEach(PotionTheme.fontSets, id: \.self) { Text($0.name).tag($0) }
                         if !draft.fonts.isPreset {
                             Divider()
@@ -61,10 +61,10 @@ struct ThemeEditor: View {
                     }
                 }
                 if editsFonts {
-                    fontPicker("Title and Headings", selection: $draft.fonts.heading)
-                    fontPicker("Body", selection: $draft.fonts.body)
-                    slider("Text Size", value: $draft.fontSize, in: PotionTheme.fontSizeRange, step: 1, label: "\(Int(draft.fontSize)) pt")
-                    slider("Line Spacing", value: $draft.lineHeight, in: PotionTheme.lineHeightRange, step: 0.05,
+                    fontPicker("Title and Headings", selection: $edit.draft.fonts.heading)
+                    fontPicker("Body", selection: $edit.draft.fonts.body)
+                    slider("Text Size", value: $edit.draft.fontSize, in: PotionTheme.fontSizeRange, step: 1, label: "\(Int(draft.fontSize)) pt")
+                    slider("Line Spacing", value: $edit.draft.lineHeight, in: PotionTheme.lineHeightRange, step: 0.05,
                            label: draft.lineHeight.formatted(.number.precision(.fractionLength(2))))
                 }
             }
@@ -73,24 +73,19 @@ struct ThemeEditor: View {
         .formStyle(.grouped)
         .bottomBar {
             HStack {
-                Button("Revert") { draft = original }
-                    .disabled(draft == original)
+                Button("Revert") { edit.draft = edit.original }
+                    .disabled(draft == edit.original)
                 Spacer()
-                Button("Cancel") { appearance.editing = nil }
+                Button("Cancel") { appearance.cancelEdit() }
                     .keyboardShortcut(.cancelAction)
-                Button("Save") {
-                    store.save(draft)
-                    appearance.editing = nil
-                }
+                Button("Save") { appearance.saveEdit(to: store) }
                 .prominentStyle()
                 .keyboardShortcut(.defaultAction)
                 .disabled(!draft.hasName)
             }
             .padding(16)
         }
-        .onChange(of: draft, initial: true) { _, theme in appearance.preview = theme }
-        // Choosing a different theme (from the Theme menu) abandons the edit.
-        .onChange(of: store.activeID) { _, _ in appearance.editing = nil }
+        .onChange(of: store.activeID) { _, id in appearance.activeThemeChanged(to: id) }
     }
 
     /// A color set or font pairing menu, with the pencil that shows its individual settings.
@@ -145,7 +140,7 @@ struct ThemeEditor: View {
     }
     private func colorPicker(_ title: String, _ key: WritableKeyPath<ThemeColors, String>) -> some View {
         ColorPicker(title, selection: Binding(get: { Color(hex: draft.colors[keyPath: key]) },
-                                              set: { draft.colors[keyPath: key] = NSColor($0).hex }),
+                                              set: { edit.draft.colors[keyPath: key] = NSColor($0).hex }),
                     supportsOpacity: false)
     }
 }

@@ -240,9 +240,11 @@ private struct AppearancePanel: View {
     @ObservedObject var appearance: AppearanceState
 
     var body: some View {
-        if let theme = appearance.editing {
-            ThemeEditor(original: theme, store: store, appearance: appearance)
-                .id(theme.id)
+        if let edit = appearance.edit {
+            // Setting only while the edit lasts, so a control finishing after Cancel can't bring it back.
+            ThemeEditor(edit: Binding(get: { appearance.edit ?? edit }, set: { if appearance.edit != nil { appearance.edit = $0 } }),
+                        store: store, appearance: appearance)
+                .id(edit.original.id)
         } else {
             gallery
         }

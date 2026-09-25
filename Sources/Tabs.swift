@@ -71,7 +71,7 @@ extension FocusedValues {
         tabs.forEach { $0.apply(theme) }
     }
 
-    /// Reopens the saved tabs, or the last page when there is nothing to restore.
+    /// Reopens the saved tabs, or the workspace when there is nothing to restore.
     func restore() {
         guard let data = defaults.data(forKey: Self.snapshotKey), let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data),
               !snapshot.urls.isEmpty else { current.open(); return }

@@ -110,13 +110,22 @@ final class PotionTests: XCTestCase {
         XCTAssertTrue(appearance.isChoosingFirstTheme)
         appearance.themeChosen()
         XCTAssertFalse(appearance.isChoosingFirstTheme)
-        appearance.newTheme(from: PotionTheme.presets[0])
-        XCTAssertEqual(appearance.editing?.name, "My Paper")
-        XCTAssertEqual(appearance.editing?.isCustom, true)
-        appearance.preview = appearance.editing
+        appearance.newTheme(from: preset("paper"))
+        XCTAssertEqual(appearance.preview?.name, "My Paper", "The draft previews while it's edited")
+        XCTAssertEqual(appearance.preview?.isCustom, true)
+        appearance.activeThemeChanged(to: "paper")
+        XCTAssertNotNil(appearance.edit, "Selecting the theme an edit started from keeps the edit")
+        appearance.activeThemeChanged(to: "midnight")
+        XCTAssertNil(appearance.edit, "Choosing another theme abandons the edit")
+        appearance.customize(preset("clay"))
         appearance.isShown = false
-        XCTAssertNil(appearance.editing, "Closing the panel abandons an edit")
-        XCTAssertNil(appearance.preview, "Ending an edit stops previewing it")
+        XCTAssertNil(appearance.preview, "Closing the panel abandons an edit")
+        let store = ThemeStore(defaults: makeDefaults())
+        appearance.customize(preset("clay"))
+        appearance.edit?.draft.colors.accent = "112233"
+        appearance.saveEdit(to: store)
+        XCTAssertNil(appearance.edit)
+        XCTAssertEqual(store.selected.colors.accent, "112233", "Saving keeps the draft as the selected theme")
     }
     func testTabTitlesAndSavedAddresses() {
         XCTAssertEqual(NavigationPolicy.pageTitle("The 4P Framework | Notion"), "The 4P Framework")

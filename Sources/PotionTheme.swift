@@ -170,7 +170,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         enabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
     }
     /// Selection identifier for Notion's own styling, which sits alongside the themes in pickers.
-    static let originalID = "original"
+    nonisolated static let originalID = "original"
     var all: [PotionTheme] { PotionTheme.presets + customs }
     /// Every theme a picker offers, Notion's own styling first.
     var choices: [PotionTheme] { [PotionTheme.original] + all }
