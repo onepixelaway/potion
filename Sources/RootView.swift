@@ -8,12 +8,11 @@ struct RootView: View {
     @StateObject private var tabs = BrowserTabs()
     @StateObject private var appearance = AppearanceState()
 
-    /// What the window's tabs show. Themes restyle Notion only after sign-in, so the login page always looks like
-    /// Notion's own; while a theme is being edited, its unsaved changes show in place of the saved theme.
-    private var styling: ThemeStyling {
-        if flow.isOnboarding { return ThemeStyling(theme: store.selected, enabled: false) }
-        if let preview = appearance.preview { return ThemeStyling(theme: preview, enabled: true) }
-        return ThemeStyling(theme: store.selected, enabled: store.enabled)
+    /// The theme the window's tabs show, or nil for Notion's own look. Themes restyle Notion only after sign-in, so
+    /// the login page always looks like Notion's own; while a theme is being edited, its unsaved changes show instead.
+    private var theme: PotionTheme? {
+        if flow.isOnboarding { return nil }
+        return appearance.preview ?? (store.enabled ? store.selected : nil)
     }
 
     var body: some View {
@@ -24,19 +23,17 @@ struct RootView: View {
                 tabs.window = window
                 flow.register(window)
             })
-            .focusedSceneObject(tabs)
-            .focusedSceneObject(appearance)
             .task {
                 guard tabs.current.webView.url == nil else { return }
                 if flow.isOnboarding { tabs.current.openLogin() } else { tabs.restore() }
             }
-            .onChange(of: styling, initial: true) { _, styling in tabs.apply(styling) }
+            .onChange(of: theme, initial: true) { _, theme in tabs.apply(theme) }
             .onChange(of: flow.stage, initial: true) { old, stage in
                 tabs.usesWindowLayout = stage == .ready
                 switch (old, stage) {
-                case (.welcome, .signIn) where tabs.current.isSignedIn:
+                case (.welcome, .signIn):
                     // Someone who is already signed in goes straight to their workspace.
-                    flow.completeOnboarding()
+                    flow.signInChanged(tabs.current.isSignedIn)
                 case (.signIn, .ready):
                     appearance.beginFirstThemeChoice()
                 case (.ready, .signIn):

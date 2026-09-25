@@ -77,30 +77,30 @@ struct AuthPopup: Identifiable {
         return "Version/\(major >= 26 ? major : major + 3).0 Safari/605.1.15"
     }
 
-    func apply(_ theme: PotionTheme, enabled: Bool) {
-        let script = ThemeInjection.script(theme: theme, enabled: enabled)
+    /// Restyles Notion with a theme, or restores Notion's own look when it's nil.
+    func apply(_ theme: PotionTheme?) {
+        let script = ThemeInjection.script(for: theme)
         guard script != themeScript else { return }
         themeScript = script
         scriptsOutdated = true
         // Pages load a theme's two font families only while it's on, and get them again only when they change.
-        let families = enabled ? theme.validated.fonts : nil
-        let newFonts = families != fonts ? families.map { ThemeInjection.fontScript(for: $0) + "\n" } ?? "" : ""
+        let families = theme?.validated.fonts
+        var fontScript = ""
+        if families != fonts, let families { fontScript = ThemeInjection.fontScript(for: families) + "\n" }
         fonts = families
-        run(newFonts + script + ThemeInjection.chromeRefresh)
+        // A tab that hasn't opened a page yet gets all of this from its user scripts.
+        guard webView.url != nil else { return }
+        run(fontScript + script + ThemeInjection.chromeRefresh)
     }
     private func installScriptsIfOutdated() {
         guard scriptsOutdated else { return }
         scriptsOutdated = false
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
-        controller.addUserScript(WKUserScript(source: ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript,
-                                              injectionTime: .atDocumentEnd, forMainFrameOnly: true))
-        if let themeScript {
-            if let fonts {
-                controller.addUserScript(WKUserScript(source: ThemeInjection.fontScript(for: fonts), injectionTime: .atDocumentEnd, forMainFrameOnly: true))
-            }
-            controller.addUserScript(WKUserScript(source: themeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
-        }
+        func add(_ source: String) { controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true)) }
+        add(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript)
+        if let fonts { add(ThemeInjection.fontScript(for: fonts)) }
+        if let themeScript { add(themeScript) }
     }
     private func run(_ script: String) { webView.evaluateJavaScript(script, completionHandler: nil) }
     /// Shows or hides Notion's own sidebar, as its ⌘\ shortcut does.
@@ -117,17 +117,17 @@ struct AuthPopup: Identifiable {
         error = nil
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
     }
-    func openLogin() {
-        error = nil
-        webView.load(URLRequest(url: Self.loginURL))
-    }
+    func openLogin() { load(Self.loginURL) }
     /// Opens a Notion page, or else the last page, or else the login page (Notion sends signed-in people onward).
     func open(_ url: URL? = nil) {
-        error = nil
         let saved = UserDefaults.standard.url(forKey: Self.lastURLKey)
         let requested = url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil }
         let restorable = saved.flatMap { NavigationPolicy.isRestorable($0) ? $0 : nil }
-        webView.load(URLRequest(url: requested ?? restorable ?? Self.loginURL))
+        load(requested ?? restorable ?? Self.loginURL)
+    }
+    private func load(_ url: URL) {
+        error = nil
+        webView.load(URLRequest(url: url))
     }
     func reload() {
         error = nil
@@ -136,10 +136,7 @@ struct AuthPopup: Identifiable {
     func goBack() { webView.goBack() }
     func goForward() { webView.goForward() }
     var canOpenInBrowser: Bool { url.map(NavigationPolicy.canOpenExternally) ?? false }
-    func openInBrowser() {
-        guard let url = webView.url, NavigationPolicy.canOpenExternally(url) else { return }
-        NSWorkspace.shared.open(url)
-    }
+    func openInBrowser() { if let url = webView.url { NavigationPolicy.openExternally(url) } }
     /// Removes every cookie and cache Potion's web views have stored. All windows share this data store.
     static func removeWebsiteData() async {
         await WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
@@ -224,7 +221,7 @@ struct AuthPopup: Identifiable {
             : NavigationPolicy.decision(for: url, isLinkClick: action.navigationType == .linkActivated, from: webView.url)
         switch decision {
         case .allow:
-            if isPopup, url.absoluteString != "about:blank", authPopup?.webView !== webView {
+            if isPopup, !NavigationPolicy.isBlank(url), authPopup?.webView !== webView {
                 authPopup = AuthPopup(webView: webView)
             }
             decisionHandler(.allow)
@@ -249,7 +246,7 @@ struct AuthPopup: Identifiable {
             return nil
         }
         guard NavigationPolicy.isTrusted(url) || url.absoluteString.isEmpty else {
-            if NavigationPolicy.canOpenExternally(url) { NSWorkspace.shared.open(url) }
+            NavigationPolicy.openExternally(url)
             return nil
         }
         // The popup must be a real window: Notion's sign-in page waits for it to report back via window.opener.

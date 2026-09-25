@@ -21,7 +21,11 @@ struct ThemeColors: Codable, Hashable {
     var text: String
     var accent: String
 
-    static let fields: [WritableKeyPath<ThemeColors, String>] = [\.background, \.surface, \.title, \.heading, \.text, \.accent]
+    /// Every color, labeled as the editor shows it.
+    static let fields: [(label: String, key: WritableKeyPath<ThemeColors, String>)] = [
+        ("Page", \.background), ("Sidebar and Surfaces", \.surface), ("Page Title", \.title),
+        ("Headings", \.heading), ("Text", \.text), ("Accent and Links", \.accent),
+    ]
     var isDark: Bool { NSColor(hex: background).brightnessComponent < 0.45 }
     /// Whether these are one of the presets' palettes, as opposed to colors someone mixed.
     var isPreset: Bool { PotionTheme.presets.contains { $0.colors == self } }
@@ -38,16 +42,14 @@ extension ThemeColors {
 struct PotionTheme: Codable, Identifiable, Equatable {
     var id: String
     var name: String
-    var subtitle: String
     var fonts: ThemeFonts
     var colors: ThemeColors
     var fontSize: Double = 16
     var lineHeight: Double = 1.65
     var isCustom = false
 
-    private static func preset(_ id: String, _ name: String, _ subtitle: String, _ heading: String, _ body: String,
-                               _ colors: ThemeColors) -> PotionTheme {
-        PotionTheme(id: id, name: name, subtitle: subtitle, fonts: ThemeFonts(heading: heading, body: body), colors: colors)
+    private static func preset(_ id: String, _ name: String, _ heading: String, _ body: String, _ colors: ThemeColors) -> PotionTheme {
+        PotionTheme(id: id, name: name, fonts: ThemeFonts(heading: heading, body: body), colors: colors)
     }
 
     /// Colors run page, surfaces, title, headings, text, accent. The title carries the theme's main color and headings
@@ -55,53 +57,53 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     /// with at least 7:1 contrast against the page and sidebar; titles, headings and links keep at least 4.5:1. Links
     /// take the title's color, and dark themes keep text off pure white to cut glare.
     static let presets: [PotionTheme] = [
-        preset("paper", "Paper", "A little room to think.", "Lora", "DM Sans",
+        preset("paper", "Paper", "Lora", "DM Sans",
                ThemeColors("F8F5EF", "EEEAE2", "4B672A", "9A4A2C", "3A3E36", "4B672A")),
-        preset("botanical", "Botanical", "Fresh ideas take root.", "DM Serif Display", "Manrope",
+        preset("botanical", "Botanical", "DM Serif Display", "Manrope",
                ThemeColors("EEF2EC", "DFE8DC", "1E6A4E", "8C3A5E", "2E3B34", "1E6A4E")),
-        preset("lavender", "Lavender", "Find your softer focus.", "Lora", "Source Sans 3",
+        preset("lavender", "Lavender", "Lora", "Source Sans 3",
                ThemeColors("F6F3F9", "E9E3F1", "5A3D9A", "805A0E", "3E3750", "5A3D9A")),
-        preset("clay", "Clay", "For beautifully messy ideas.", "DM Serif Display", "DM Sans",
+        preset("clay", "Clay", "DM Serif Display", "DM Sans",
                ThemeColors("FBF4EE", "F1E3D8", "A0462A", "2B6966", "47352E", "9A4424")),
-        preset("mono", "Studio", "Less noise. More clarity.", "Space Grotesk", "Manrope",
+        preset("mono", "Studio", "Space Grotesk", "Manrope",
                ThemeColors("F6F6F4", "E9E9E6", "33448A", "9A552A", "343735", "33448A")),
-        preset("linen", "Linen", "Unhurried, like a Sunday.", "Marcellus", "DM Sans",
+        preset("linen", "Linen", "Marcellus", "DM Sans",
                ThemeColors("FAF7F2", "EFEAE2", "86552A", "3C5878", "3D3833", "86552A")),
-        preset("porcelain", "Porcelain", "Clean lines, clear thoughts.", "Libre Caslon Display", "Jost",
+        preset("porcelain", "Porcelain", "Libre Caslon Display", "Jost",
                ThemeColors("F5F7FA", "E6ECF2", "24528F", "A04A22", "2F3A46", "24528F")),
-        preset("blossom", "Blossom", "Gentle, with a point of view.", "Cormorant", "Karla",
+        preset("blossom", "Blossom", "Cormorant", "Karla",
                ThemeColors("FBF5F5", "F2E5E5", "9C3654", "4A6B48", "4A3A3D", "9C3654")),
-        preset("seaglass", "Sea Glass", "Calm water, clear head.", "Instrument Serif", "Instrument Sans",
+        preset("seaglass", "Sea Glass", "Instrument Serif", "Instrument Sans",
                ThemeColors("F0F5F4", "DFEBE9", "16665F", "A04636", "2D3E3C", "16665F")),
-        preset("library", "Library", "Settle in for a long read.", "Newsreader", "Literata",
+        preset("library", "Library", "Newsreader", "Literata",
                ThemeColors("F7F2E8", "EBE3D2", "7C2B28", "2C5C4B", "3B342A", "7C2B28")),
-        preset("fog", "Fog", "Quiet structure for busy days.", "Sora", "Inter",
+        preset("fog", "Fog", "Sora", "Inter",
                ThemeColors("F4F5F7", "E5E7EB", "3C4AAE", "8A5A0C", "333844", "3C4AAE")),
-        preset("meadow", "Meadow", "Warm light, easy reading.", "Fraunces", "Figtree",
+        preset("meadow", "Meadow", "Fraunces", "Figtree",
                ThemeColors("FAF8EE", "EFEBD7", "56661A", "774790", "3F3B2B", "56661A")),
-        preset("champagne", "Champagne", "Quietly celebratory.", "Bodoni Moda", "Hanken Grotesk",
+        preset("champagne", "Champagne", "Bodoni Moda", "Hanken Grotesk",
                ThemeColors("FAF6F2", "F0E8E2", "7A2B3A", "9E5462", "3D3537", "8E3A4A")),
-        preset("atelier", "Atelier", "Composed, like a gallery wall.", "Gilda Display", "Mulish",
+        preset("atelier", "Atelier", "Gilda Display", "Mulish",
                ThemeColors("F6F6F2", "EAEAE4", "1F3A5F", "48678E", "33373D", "2F5A8C")),
-        preset("midnight", "Midnight", "Make space for the late shift.", "Space Grotesk", "DM Sans",
+        preset("midnight", "Midnight", "Space Grotesk", "DM Sans",
                ThemeColors("1F242B", "2A313A", "A9C4F0", "EDB38C", "D8DCE1", "A9C4F0")),
-        preset("ink", "Ink", "An evening edition.", "Playfair Display", "Source Serif 4",
+        preset("ink", "Ink", "Playfair Display", "Source Serif 4",
                ThemeColors("161A24", "202634", "E3C681", "DCA3BC", "CDD2DC", "E3C681")),
-        preset("forest", "Forest", "Deep green, deep work.", "Crimson Pro", "Work Sans",
+        preset("forest", "Forest", "Crimson Pro", "Work Sans",
                ThemeColors("172019", "212C24", "A6D6B6", "E7AAA0", "D2DCD4", "A6D6B6")),
-        preset("espresso", "Espresso", "Rich, dark, and focused.", "Young Serif", "Albert Sans",
+        preset("espresso", "Espresso", "Young Serif", "Albert Sans",
                ThemeColors("1E1A17", "2A2420", "E8B185", "A3C1DC", "DDD4CA", "E8B185")),
-        preset("plum", "Plum", "Soft light after dusk.", "Outfit", "Source Serif 4",
+        preset("plum", "Plum", "Outfit", "Source Serif 4",
                ThemeColors("1F1B25", "2A2431", "D0B2F2", "CBDB92", "DAD3E2", "D0B2F2")),
-        preset("terminal", "Terminal", "For thinking in systems.", "JetBrains Mono", "Inter",
+        preset("terminal", "Terminal", "JetBrains Mono", "Inter",
                ThemeColors("161719", "202225", "9FE0B8", "EBC57C", "D5D6D2", "9FE0B8")),
-        preset("harbor", "Harbor", "Easy on the eyes, all night.", "Atkinson Hyperlegible Next", "Atkinson Hyperlegible Next",
+        preset("harbor", "Harbor", "Atkinson Hyperlegible Next", "Atkinson Hyperlegible Next",
                ThemeColors("132226", "1C3034", "8ED9D1", "F2A993", "CEDCDC", "8ED9D1")),
-        preset("ember", "Ember", "Low light, warm glow.", "Bitter", "Source Sans 3",
+        preset("ember", "Ember", "Bitter", "Source Sans 3",
                ThemeColors("1C1A1C", "272427", "EFA79D", "DCC684", "DCD5D7", "EFA79D")),
-        preset("velvet", "Velvet", "Candlelight and good paper.", "Prata", "Lora",
+        preset("velvet", "Velvet", "Prata", "Lora",
                ThemeColors("1D1618", "292023", "EDBBAE", "C99B91", "DDD2D2", "E3AE9F")),
-        preset("nocturne", "Nocturne", "Black tie, after hours.", "EB Garamond", "Figtree",
+        preset("nocturne", "Nocturne", "EB Garamond", "Figtree",
                ThemeColors("1A1A17", "25251F", "E3CB8F", "BFA56E", "D9D6CC", "D8BE82")),
     ]
     /// The presets in the order pickers list them: light ones, then dark.
@@ -111,6 +113,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     /// Every preset's font pairing, in alphabetical order.
     static let fontSets: [ThemeFonts] = Array(Set(presets.map(\.fonts))).sorted { $0.name < $1.name }
 
+    static func preset(id: String) -> PotionTheme? { presets.first { $0.id == id } }
     /// The theme Potion starts with, and falls back to.
     static var standard: PotionTheme { presets[0] }
     static let fontSizeRange: ClosedRange<Double> = 13...22
@@ -127,15 +130,16 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         return copy
     }
     /// Presets as they're defined now, so saved selections pick up changes to them.
-    var latest: PotionTheme { isCustom ? self : Self.presets.first { $0.id == id } ?? Self.standard }
+    var latest: PotionTheme { isCustom ? self : Self.preset(id: id) ?? Self.standard }
     var validated: PotionTheme {
         var copy = self
         let fallback = Self.standard
-        for key in ThemeColors.fields {
+        for (_, key) in ThemeColors.fields {
             copy.colors[keyPath: key] = Self.cleanHex(copy.colors[keyPath: key]) ?? fallback.colors[keyPath: key]
         }
-        if !FontCatalog.families.contains(copy.fonts.heading) { copy.fonts.heading = fallback.fonts.heading }
-        if !FontCatalog.families.contains(copy.fonts.body) { copy.fonts.body = fallback.fonts.body }
+        for key in [\ThemeFonts.heading, \.body] where FontCatalog.url(for: copy.fonts[keyPath: key]) == nil {
+            copy.fonts[keyPath: key] = fallback.fonts[keyPath: key]
+        }
         copy.fontSize = copy.fontSize.isFinite ? copy.fontSize.clamped(to: Self.fontSizeRange) : fallback.fontSize
         copy.lineHeight = copy.lineHeight.isFinite ? copy.lineHeight.clamped(to: Self.lineHeightRange) : fallback.lineHeight
         copy.name = String(copy.name.prefix(60))
@@ -158,32 +162,9 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     private static let enabledKey = "themeEnabled"
     private struct Archive: Codable { var selected: PotionTheme; var customs: [PotionTheme] }
 
-    /// Version 1 themes kept one text color and flat font names; they open with that color for all three kinds of text.
-    private static let legacyKey = "potion.themes.v1"
-    private struct LegacyArchive: Decodable { var selected: LegacyTheme; var customs: [LegacyTheme] }
-    private struct LegacyTheme: Decodable {
-        var id, name, subtitle, headingFont, bodyFont, background, surface, text, accent: String
-        var fontSize, lineHeight: Double
-        var isCustom: Bool
-        var upgraded: PotionTheme {
-            PotionTheme(id: id, name: name, subtitle: subtitle, fonts: ThemeFonts(heading: headingFont, body: bodyFont),
-                        colors: ThemeColors(background, surface, text, text, text, accent),
-                        fontSize: fontSize, lineHeight: lineHeight, isCustom: isCustom)
-        }
-    }
-    /// The saved themes, upgrading and resaving a version 1 archive the first time.
-    private static func load(from defaults: UserDefaults) -> Archive? {
-        if let data = defaults.data(forKey: archiveKey) { return try? JSONDecoder().decode(Archive.self, from: data) }
-        guard let data = defaults.data(forKey: legacyKey),
-              let legacy = try? JSONDecoder().decode(LegacyArchive.self, from: data) else { return nil }
-        let archive = Archive(selected: legacy.selected.upgraded, customs: legacy.customs.map(\.upgraded))
-        defaults.set(try? JSONEncoder().encode(archive), forKey: archiveKey)
-        return archive
-    }
-
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        let archive = Self.load(from: defaults)
+        let archive = defaults.data(forKey: Self.archiveKey).flatMap { try? JSONDecoder().decode(Archive.self, from: $0) }
         selected = archive?.selected.latest.validated ?? .standard
         customs = archive?.customs.map(\.validated) ?? []
         enabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
@@ -193,7 +174,10 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     var all: [PotionTheme] { PotionTheme.presets + customs }
     /// Every theme a picker offers, Notion's own styling first.
     var choices: [PotionTheme] { [PotionTheme.original] + all }
-    var activeID: String { enabled ? selected.id : Self.originalID }
+    var activeID: String {
+        get { enabled ? selected.id : Self.originalID }
+        set { activate(newValue) }
+    }
     func activate(_ id: String) {
         if id == Self.originalID { enabled = false }
         else if let theme = all.first(where: { $0.id == id }) { select(theme) }
@@ -229,7 +213,7 @@ enum FontCatalog {
         }, uniquingKeysWith: { first, _ in first })
     }()
     static let families = files.keys.sorted()
-    static func register() { files.values.forEach { CTFontManagerRegisterFontsForURL($0 as CFURL, .process, nil) } }
+    static func register() { CTFontManagerRegisterFontURLs(Array(files.values) as CFArray, .process, true, nil) }
     static func url(for family: String) -> URL? { files[family] }
 }
 

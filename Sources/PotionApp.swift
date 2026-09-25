@@ -55,7 +55,7 @@ private struct PotionCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Tab") { tabs?.newTab() }
                 .keyboardShortcut("t")
-                .disabled(!inWorkspace || tabs == nil)
+                .disabled(tabs == nil)
             Button("New Window") { openWindow(id: "workspace") }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(!inWorkspace)
@@ -63,7 +63,7 @@ private struct PotionCommands: Commands {
             // Listed before the system's Close item, so ⌘W closes a tab first and the window with its last tab.
             Button("Close Tab") { if let tabs { tabs.close(tabs.current) } }
                 .keyboardShortcut("w")
-                .disabled(!inWorkspace || tabs == nil)
+                .disabled(tabs == nil)
         }
         CommandGroup(before: .toolbar) {
             Button("Toggle Notion Sidebar") { workspace?.toggleSidebar() }
@@ -71,7 +71,7 @@ private struct PotionCommands: Commands {
                 .disabled(!inWorkspace || workspace == nil)
             Button(appearance?.isShown == true ? "Hide Appearance" : "Show Appearance") { appearance?.toggle() }
             .keyboardShortcut("i", modifiers: [.command, .control])
-            .disabled(!inWorkspace || appearance == nil)
+            .disabled(appearance == nil)
             Divider()
             Button("Reload Page") { workspace?.reload() }
                 .keyboardShortcut("r")
@@ -101,9 +101,9 @@ private struct PotionCommands: Commands {
             }
             Divider()
             Button("Customize Theme…") { appearance?.customize(store.selected) }
-                .disabled(!inWorkspace || appearance == nil || !store.enabled)
+                .disabled(appearance == nil || !store.enabled)
             Button("New Theme…") { appearance?.newTheme(from: store.selected) }
-                .disabled(!inWorkspace || appearance == nil)
+                .disabled(appearance == nil)
         }
     }
 }
@@ -126,7 +126,7 @@ private struct SettingsView: View {
                 }
             }
             Section {
-                Picker("Theme", selection: Binding(get: { store.activeID }, set: { store.activate($0) })) {
+                Picker("Theme", selection: $store.activeID) {
                     ForEach(store.choices) { theme in Text(theme.name).tag(theme.id) }
                 }
             } header: {

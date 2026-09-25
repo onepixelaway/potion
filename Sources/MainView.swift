@@ -9,7 +9,7 @@ struct MainView: View {
     var body: some View {
         // Notion fills the window up to the title bar, as in its own app; Potion's tab row sits over the page column.
         ZStack(alignment: .topLeading) {
-            BrowserView(theme: tabs.styling.active, workspace: workspace)
+            BrowserView(theme: tabs.theme, workspace: workspace)
             WindowHeader(tabs: tabs, workspace: workspace, appearance: appearance)
         }
         .ignoresSafeArea(edges: .top)
@@ -18,11 +18,14 @@ struct MainView: View {
         .hiddenTitleBar()
         .modifier(TitleBarHeight())
         // Header controls over the page follow the theme's light or dark appearance, including one being edited.
-        .preferredColorScheme(tabs.styling.active.map { $0.isDark ? .dark : .light })
+        .preferredColorScheme(tabs.theme.map { $0.isDark ? .dark : .light })
         .inspector(isPresented: $appearance.isShown) {
             AppearancePanel(store: store, appearance: appearance)
                 .inspectorColumnWidth(min: 290, ideal: 310, max: 380)
         }
+        // Published only here, in the workspace, so tab and theme commands are off during onboarding.
+        .focusedSceneObject(tabs)
+        .focusedSceneObject(appearance)
     }
 }
 
@@ -328,17 +331,9 @@ private struct BrowserView: View {
             }
             .overlay {
                 if let error = workspace.error {
-                    ContentUnavailableView {
-                        Label("Can’t Open This Page", systemImage: "wifi.exclamationmark")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("Try Again") { workspace.reload() }
-                            .keyboardShortcut(.defaultAction)
-                        Button("Open in Browser") { workspace.openInBrowser() }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.background)
+                    PageErrorView(title: "Can’t Open This Page", error: error, workspace: workspace, offersBrowser: true)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.background)
                 }
             }
     }

@@ -47,12 +47,7 @@ struct ThemeEditor: View {
                     }
                 }
                 if editsColors {
-                    colorPicker("Page", \.background)
-                    colorPicker("Sidebar and Surfaces", \.surface)
-                    colorPicker("Page Title", \.title)
-                    colorPicker("Headings", \.heading)
-                    colorPicker("Text", \.text)
-                    colorPicker("Accent and Links", \.accent)
+                    ForEach(ThemeColors.fields, id: \.label) { colorPicker($0.label, $0.key) }
                 }
             }
             Section {

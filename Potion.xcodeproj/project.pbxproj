@@ -48,6 +48,7 @@
 		7191EC5F57DDC28322F6B350 /* Cormorant[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 25797D89D7161C3D0BE88511 /* Cormorant[wght].ttf */; };
 		750E1767AF43799782063550 /* albertsans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 81CA6141FECB3615D1C90339 /* albertsans-OFL.txt */; };
 		767F4E7FD194C27455BBFFFD /* bitter-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = F4A4ECFF0AE87A06AE547386 /* bitter-OFL.txt */; };
+		76BEA8E06FC8C90905906BAD /* SharedViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66094FB66B1B5FFF071ED377 /* SharedViews.swift */; };
 		7879523442FB5F54483C290C /* CrimsonPro[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = BCE6F7ACD38C30B214F57E3E /* CrimsonPro[wght].ttf */; };
 		79414B38F428B34500D306D3 /* newsreader-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 49839B5B87DE73173664B250 /* newsreader-OFL.txt */; };
 		82F943A61EFFF5F42B2F1040 /* SourceSerif4[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7016E66DDDD6439DE2CB4A9C /* SourceSerif4[opsz,wght].ttf */; };
@@ -79,6 +80,7 @@
 		D2E698FBAA6EA5B92E3E3A0D /* Newsreader[opsz,wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = BD4ED934F869568D5DF3F548 /* Newsreader[opsz,wght].ttf */; };
 		D3F76781E3E348B50E41F45D /* SpaceGrotesk[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 97BA8193D5AAC24A1B47D273 /* SpaceGrotesk[wght].ttf */; };
 		D660D514F21375AB047ACE14 /* WorkSans[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 532A815C58F03DE7FCCAF8FA /* WorkSans[wght].ttf */; };
+		D7AC026CC637AE5A6C5E5016 /* NavigationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4827A2C4EF367EBA05C88918 /* NavigationPolicy.swift */; };
 		DB9295DB3B408C47C37C567C /* sora-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = E207B34C69E0986E46A29713 /* sora-OFL.txt */; };
 		DBD4F2200F1614F9223C535B /* fraunces-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 03C15A45F157AEBE8930BB67 /* fraunces-OFL.txt */; };
 		DE7CB886CC10F38064C99100 /* manrope-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 02121AF1CD660FDF52116E53 /* manrope-OFL.txt */; };
@@ -133,6 +135,7 @@
 		43BD1F59E1BF1ED22B7F88F9 /* worksans-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "worksans-OFL.txt"; sourceTree = "<group>"; };
 		458D304E057A8677C8D412DF /* Jost[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Jost[wght].ttf"; sourceTree = "<group>"; };
 		45DB4AE63A421C20E2BA8727 /* DMSerifDisplay-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSerifDisplay-Regular.ttf"; sourceTree = "<group>"; };
+		4827A2C4EF367EBA05C88918 /* NavigationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationPolicy.swift; sourceTree = "<group>"; };
 		49839B5B87DE73173664B250 /* newsreader-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "newsreader-OFL.txt"; sourceTree = "<group>"; };
 		4E608990F2FC06042925A95A /* lora-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lora-OFL.txt"; sourceTree = "<group>"; };
 		4F7955BB74DCA58B2FE4AF75 /* PotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotionTests.swift; sourceTree = "<group>"; };
@@ -148,6 +151,7 @@
 		611AC13B4DAABC630E53414E /* figtree-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "figtree-OFL.txt"; sourceTree = "<group>"; };
 		6146C5BB34499613735573D6 /* Mulish[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Mulish[wght].ttf"; sourceTree = "<group>"; };
 		627F02A9B8E9A2D15D983BFE /* Manrope[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope[wght].ttf"; sourceTree = "<group>"; };
+		66094FB66B1B5FFF071ED377 /* SharedViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedViews.swift; sourceTree = "<group>"; };
 		67DDDE9DF67920D6D9A58B9A /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		7016E66DDDD6439DE2CB4A9C /* SourceSerif4[opsz,wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceSerif4[opsz,wght].ttf"; sourceTree = "<group>"; };
 		7051D5C7E5B5C2548ED5CE71 /* playfairdisplay-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "playfairdisplay-OFL.txt"; sourceTree = "<group>"; };
@@ -208,10 +212,12 @@
 			children = (
 				CD689479AD9B3A68B4E5E93F /* AppFlow.swift */,
 				A708136DB6D5819BB152E768 /* MainView.swift */,
+				4827A2C4EF367EBA05C88918 /* NavigationPolicy.swift */,
 				7F58EBF1D890549D3C99ADD5 /* Onboarding.swift */,
 				2392A451FA8309481D04A012 /* PotionApp.swift */,
 				8AF883E4FB208E05FD566A36 /* PotionTheme.swift */,
 				0A349F2E3488A9400C8E2ABA /* RootView.swift */,
+				66094FB66B1B5FFF071ED377 /* SharedViews.swift */,
 				F20E25D54D16F16457E4C005 /* Tabs.swift */,
 				112B55E29F5EF615C76B12AF /* ThemeEditor.swift */,
 				29397D3567753A98E1F9B150 /* ThemeInjection.swift */,
@@ -502,10 +508,12 @@
 			files = (
 				ABC346D436ED365CC0D311F7 /* AppFlow.swift in Sources */,
 				57DB2D8666882ACB8A6BDF7E /* MainView.swift in Sources */,
+				D7AC026CC637AE5A6C5E5016 /* NavigationPolicy.swift in Sources */,
 				4A4CC4744D88D0FCF81303F7 /* Onboarding.swift in Sources */,
 				6A297650200444676D6DF97B /* PotionApp.swift in Sources */,
 				6842A80AB49B7D55CC79A320 /* PotionTheme.swift in Sources */,
 				053E865EB85F2C36CBEF572A /* RootView.swift in Sources */,
+				76BEA8E06FC8C90905906BAD /* SharedViews.swift in Sources */,
 				551190FB0CE750DAD48C10D7 /* Tabs.swift in Sources */,
 				CDA620D103F5E14626898AA0 /* ThemeEditor.swift in Sources */,
 				E47A076C24F00248F3A64148 /* ThemeInjection.swift in Sources */,
