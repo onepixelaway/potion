@@ -30,20 +30,23 @@ struct AuthPopup: Identifiable {
     private(set) var sidebarWidth: CGFloat = 0
     /// Unread notifications in Notion's inbox.
     private(set) var inboxCount = 0
-    /// Moves Notion's sidebar row into the title bar and makes room for Potion's tab row. Off during sign-in.
-    @ObservationIgnored var usesWindowLayout = false {
+    /// What this tab's pages show. Changes reach the open page right away; the user scripts, which carry the style to
+    /// later pages and include the large fonts, are reinstalled only when a page loads, so an edit doesn't resend them
+    /// on every tick.
+    @ObservationIgnored private var style = ThemeInjection.PageStyle() {
         didSet {
-            guard usesWindowLayout != oldValue else { return }
+            guard style != oldValue else { return }
             scriptsOutdated = true
-            run(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeRefresh)
+            // A tab that hasn't opened a page yet gets its style from the user scripts.
+            if webView.url != nil { run(ThemeInjection.update(style, withFonts: style.fonts != oldValue.fonts)) }
         }
     }
-    @ObservationIgnored private var themeScript: String?
-    /// The fonts embedded in pages, which they get only while a theme is on.
-    @ObservationIgnored private var fonts: ThemeFonts?
-    /// Changes reach the open page right away; the user scripts, which carry them to later pages and include the
-    /// large fonts script, are reinstalled only when a page loads. So a theme edit doesn't resend them on every tick.
     @ObservationIgnored private var scriptsOutdated = true
+    /// Moves Notion's sidebar row into the title bar and makes room for Potion's tab row. Off during sign-in.
+    var usesWindowLayout: Bool {
+        get { style.layout }
+        set { style.layout = newValue }
+    }
     /// The current workspace page, restored per window and tab on relaunch.
     @ObservationIgnored private(set) var pageURL: URL? { didSet { onPageChange?() } }
     /// Called after `pageURL` changes. Set by the window hosting this workspace.
@@ -78,29 +81,15 @@ struct AuthPopup: Identifiable {
     }
 
     /// Restyles Notion with a theme, or restores Notion's own look when it's nil.
-    func apply(_ theme: PotionTheme?) {
-        let script = ThemeInjection.script(for: theme)
-        guard script != themeScript else { return }
-        themeScript = script
-        scriptsOutdated = true
-        // Pages load a theme's two font families only while it's on, and get them again only when they change.
-        let families = theme?.validated.fonts
-        var fontScript = ""
-        if families != fonts, let families { fontScript = ThemeInjection.fontScript(for: families) + "\n" }
-        fonts = families
-        // A tab that hasn't opened a page yet gets all of this from its user scripts.
-        guard webView.url != nil else { return }
-        run(fontScript + script + ThemeInjection.chromeRefresh)
-    }
+    func apply(_ theme: PotionTheme?) { style.theme = theme?.validated }
     private func installScriptsIfOutdated() {
         guard scriptsOutdated else { return }
         scriptsOutdated = false
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
-        func add(_ source: String) { controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true)) }
-        add(ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript)
-        if let fonts { add(ThemeInjection.fontScript(for: fonts)) }
-        if let themeScript { add(themeScript) }
+        for source in [ThemeInjection.runtime, ThemeInjection.update(style, withFonts: true)] {
+            controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        }
     }
     private func run(_ script: String) { webView.evaluateJavaScript(script, completionHandler: nil) }
     /// Shows or hides Notion's own sidebar, as its ⌘\ shortcut does.
@@ -178,7 +167,7 @@ struct AuthPopup: Identifiable {
     // MARK: Page chrome
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.frameInfo.isMainFrame, let url = message.frameInfo.request.url, NavigationPolicy.isNotion(url),
+        guard message.webView === webView, message.frameInfo.isMainFrame, let url = message.frameInfo.request.url, NavigationPolicy.isNotion(url),
               let body = message.body as? [String: Any], let width = body["sidebarWidth"] as? NSNumber else { return }
         update(\.sidebarWidth, CGFloat(width.doubleValue))
         update(\.inboxCount, (body["inboxCount"] as? NSNumber)?.intValue ?? 0)

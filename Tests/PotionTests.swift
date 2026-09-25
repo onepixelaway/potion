@@ -269,10 +269,12 @@ final class PotionTests: XCTestCase {
             <div class="notion-frame"><div id="page" class="notion-scroller vertical" style="height:100px;overflow:auto"><div style="height:500px"></div></div>
               <div id="table" class="notion-scroller horizontal" style="width:100px;height:100px;overflow:auto"><div style="width:500px;height:500px"></div></div></div>
             <div class="notion-sidebar"><div id="sidebar" class="notion-scroller vertical" style="height:100px;overflow:auto"><div style="height:500px"></div></div></div>`);
-          window.__potionChromePost();
           ['page', 'sidebar', 'table'].map(id => { const el = document.getElementById(id); return el.offsetWidth - el.clientWidth; });
         """, in: workspace) as? [Int]
         XCTAssertEqual(widths, [0, 0, 10], "Page and sidebar scroll bars are hidden; a wide table's stays")
+        workspace.usesWindowLayout = false
+        let layout = try await js("document.getElementById('potion-layout').textContent", in: workspace) as? String
+        XCTAssertEqual(layout, "", "Leaving the workspace layout reaches the open page without a reload")
     }
     @MainActor func testFontsLoadOnlyWhileThemed() async throws {
         let workspace = Workspace()

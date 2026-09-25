@@ -24,9 +24,6 @@ enum ThemeInjection {
       };
     """
 
-    /// The last fonts script built, shared by every tab since they all show the same theme.
-    @MainActor private static var fontCache: (fonts: ThemeFonts, script: String)?
-
     /// Each family's embedded @font-face rule, read and encoded the first time a theme uses it.
     @MainActor private static var fontFaces: [String: String] = [:]
     @MainActor private static func fontFace(_ family: String) -> String? {
@@ -36,22 +33,15 @@ enum ThemeInjection {
         fontFaces[family] = rule
         return rule
     }
-
-    /// A theme's two font families, embedded in the page as their own style element. Installed as its own user script
-    /// and resent only when the fonts change, so color and size edits never re-encode or re-compare them.
-    @MainActor static func fontScript(for fonts: ThemeFonts) -> String {
-        if let fontCache, fontCache.fonts == fonts { return fontCache.script }
-        let css = Set([fonts.heading, fonts.body]).sorted().compactMap(fontFace).joined(separator: "\n")
-        let script = """
-        (() => {
-        \(themedPagesOnly)
-          window.__potionFonts = \(jsLiteral(css));
-        \(putStyle)
-          if (document.documentElement) put('potion-fonts', window.__potionFonts);
-        })();
-        """
-        fontCache = (fonts, script)
-        return script
+    /// The last fonts sent, as a JavaScript literal, shared by every tab since they all show the same theme.
+    @MainActor private static var fontsCache: (fonts: ThemeFonts, literal: String)?
+    /// A theme's two font families as one embedded stylesheet, or an empty one for Notion's own look.
+    @MainActor private static func fontsLiteral(_ fonts: ThemeFonts?) -> String {
+        guard let fonts else { return jsLiteral("") }
+        if let fontsCache, fontsCache.fonts == fonts { return fontsCache.literal }
+        let literal = jsLiteral(Set([fonts.heading, fonts.body]).sorted().compactMap(fontFace).joined(separator: "\n"))
+        fontsCache = (fonts, literal)
+        return literal
     }
 
     /// Notion's page title. Links to other pages, inside a page or in the sidebar, use the same class.
@@ -94,27 +84,17 @@ enum ThemeInjection {
         """
     }
 
-    static func script(for theme: PotionTheme?) -> String {
-        """
-        (() => {
-        \(themedPagesOnly)
-          const css = \(jsLiteral(theme.map(css(for:)) ?? ""));
-        \(putStyle)
-          const apply = () => {
-            if (!document.documentElement) return;
-            if (window.__potionFonts && !document.getElementById('potion-fonts')) put('potion-fonts', window.__potionFonts);
-            put('potion-theme', css);
-          };
-          window.__potionApply = apply;
-          apply();
-          if (!window.__potionObserver) {
-            window.__potionObserver = new MutationObserver(() => {
-              if (!document.getElementById('potion-theme') || (window.__potionFonts && !document.getElementById('potion-fonts'))) window.__potionApply();
-            });
-            window.__potionObserver.observe(document.documentElement, {childList: true, subtree: true});
-          }
-        })();
-        """
+    /// What Potion puts on a tab's pages: a theme (nil for Notion's own look) and Notion's Mac-app layout.
+    struct PageStyle: Equatable {
+        var theme: PotionTheme?
+        var layout = false
+        var fonts: ThemeFonts? { theme?.fonts }
+    }
+
+    /// Sends a page its style through `runtime`. The fonts, which are large and rarely change, go only when asked for.
+    @MainActor static func update(_ style: PageStyle, withFonts: Bool) -> String {
+        let fonts = withFonts ? ", fonts: \(fontsLiteral(style.fonts))" : ""
+        return "window.__potion?.update({ css: \(jsLiteral(style.theme.map(css(for:)) ?? "")), layout: \(style.layout)\(fonts) });"
     }
 }
 
@@ -129,7 +109,7 @@ extension ThemeInjection {
 
     /// Lays Notion out like its Mac app: the sidebar's top row moves into the title bar, its collapse button just after
     /// the traffic lights and its inbox and new-page buttons at the right; the page column moves down to make room for
-    /// Potion's back, forward and tab row. The elements are tagged by `chromeScript`. The page and sidebar scroll
+    /// Potion's back, forward and tab row. The elements are tagged by `runtime`. The page and sidebar scroll
     /// without visible scroll bars; wide tables and code blocks keep theirs.
     private static let layoutCSS = """
     .potion-sidebar-row { height: \(Int(headerHeight))px !important; padding-inline-start: \(Int(sidebarButtonX))px !important; }
@@ -139,18 +119,27 @@ extension ThemeInjection {
     .notion-frame .notion-scroller.vertical::-webkit-scrollbar, .notion-sidebar .notion-scroller.vertical::-webkit-scrollbar { display: none !important; width: 0 !important; }
     """
 
-    static func layoutFlag(_ enabled: Bool) -> String { "window.__potionLayout = \(enabled);\n" }
-
-    /// Tags Notion's sidebar row and page column for `layoutCSS`, applies it while `window.__potionLayout` is set, and
-    /// reports the sidebar's width (so Potion's tab row starts at its edge) and the inbox's unread count (shown on
-    /// Potion's own inbox button while the sidebar is collapsed). It runs only when something changes: elements added
-    /// or removed anywhere, the sidebar resizing (its collapse animates its width), and any change inside the sidebar,
-    /// including text such as the inbox badge. Text edits elsewhere, like typing in a page, don't wake it.
-    static let chromeScript = """
+    /// Installed on every page before its style. Defines `window.__potion.update`, which puts the theme, its fonts and
+    /// the layout on the page as three style elements, and one observer that puts them back whenever Notion replaces
+    /// the part of the page holding them. It also tags Notion's sidebar row and page column for `layoutCSS` and reports
+    /// the sidebar's width (so Potion's tab row starts at its edge) and the inbox's unread count (shown on Potion's own
+    /// inbox button while the sidebar is collapsed). That runs at most once a frame, and only when something changes:
+    /// elements added or removed anywhere, the sidebar resizing (its collapse animates its width), and any change inside
+    /// the sidebar, including text such as the inbox badge. Text edits elsewhere, like typing in a page, don't wake it.
+    static let runtime = """
     (() => {
-      if (window.__potionChromePost || !window.webkit?.messageHandlers?.\(chromeMessage)) return;
+    \(themedPagesOnly)
+      if (window.__potion) return;
       const layoutCSS = \(jsLiteral(layoutCSS));
+      const state = { css: '', fonts: '', layout: false };
     \(putStyle)
+      const styleIDs = ['potion-fonts', 'potion-theme', 'potion-layout'];
+      const render = () => {
+        if (!document.documentElement) return;
+        put('potion-fonts', state.fonts);
+        put('potion-theme', state.css);
+        put('potion-layout', state.layout ? layoutCSS : '');
+      };
       const tag = () => {
         const sidebar = document.querySelector('.notion-sidebar');
         let row = sidebar && sidebar.querySelector('[role=button]');
@@ -178,7 +167,6 @@ extension ThemeInjection {
         };
         const listener = document.querySelector('.notion-cursor-listener');
         if (listener) panels(listener, 0);
-        put('potion-layout', window.__potionLayout ? layoutCSS : '');
       };
       const inboxCount = () => {
         const button = document.querySelector(\(jsLiteral(sidebarButton("Inbox"))));
@@ -186,13 +174,14 @@ extension ThemeInjection {
         const badge = button?.parentElement?.parentElement?.textContent.replace(/\\D/g, '') || '0';
         return parseInt(badge, 10) || 0;
       };
+      const handler = window.webkit?.messageHandlers?.\(chromeMessage);
       let last = '';
       let observed = null;
       let scheduled = false;
-      const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; post(); }); } };
-      const resize = new ResizeObserver(() => post());
+      const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; refresh(); }); } };
+      const resize = new ResizeObserver(schedule);
       const sidebarChanges = new MutationObserver(schedule);
-      const post = () => {
+      const refresh = () => {
         if (!document.body) return;
         tag();
         const container = document.querySelector('.notion-sidebar-container');
@@ -212,15 +201,18 @@ extension ThemeInjection {
         }
         const message = { sidebarWidth: width, inboxCount: inboxCount() };
         const key = JSON.stringify(message);
-        if (key !== last) { last = key; window.webkit.messageHandlers.\(chromeMessage).postMessage(message); }
+        if (handler && key !== last) { last = key; handler.postMessage(message); }
       };
-      window.__potionChromePost = post;
+      window.__potion = { update(next) { Object.assign(state, next); render(); schedule(); } };
       window.addEventListener('resize', schedule);
-      new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-      post();
+      new MutationObserver(() => {
+        if (styleIDs.some(id => !document.getElementById(id))) render();
+        schedule();
+      }).observe(document.documentElement, { childList: true, subtree: true });
+      render();
+      refresh();
     })();
     """
-    static let chromeRefresh = "\n;window.__potionChromePost && requestAnimationFrame(() => window.__potionChromePost());"
 
     /// Presses one of the buttons in Notion's sidebar row, which stay in the page while the sidebar is collapsed.
     static func pressSidebarButton(_ label: String) -> String {
