@@ -39,8 +39,8 @@ struct AuthPopup: Identifiable {
         }
     }
     @ObservationIgnored private var themeScript: String?
-    /// Whether the installed theme restyles pages, and so needs the bundled fonts.
-    @ObservationIgnored private var themeEnabled = false
+    /// The fonts embedded in pages, which they get only while a theme is on.
+    @ObservationIgnored private var fonts: ThemeFonts?
     /// Changes reach the open page right away; the user scripts, which carry them to later pages and include the
     /// large fonts script, are reinstalled only when a page loads. So a theme edit doesn't resend them on every tick.
     @ObservationIgnored private var scriptsOutdated = true
@@ -80,12 +80,13 @@ struct AuthPopup: Identifiable {
     func apply(_ theme: PotionTheme, enabled: Bool) {
         let script = ThemeInjection.script(theme: theme, enabled: enabled)
         guard script != themeScript else { return }
-        // Pages loaded while theming was off have no fonts yet, so they come along when it turns on.
-        let fonts = enabled && !themeEnabled ? ThemeInjection.fontScript + "\n" : ""
         themeScript = script
-        themeEnabled = enabled
         scriptsOutdated = true
-        run(fonts + script + ThemeInjection.chromeRefresh)
+        // Pages load a theme's two font families only while it's on, and get them again only when they change.
+        let families = enabled ? theme.validated.fonts : nil
+        let newFonts = families != fonts ? families.map { ThemeInjection.fontScript(for: $0) + "\n" } ?? "" : ""
+        fonts = families
+        run(newFonts + script + ThemeInjection.chromeRefresh)
     }
     private func installScriptsIfOutdated() {
         guard scriptsOutdated else { return }
@@ -95,9 +96,8 @@ struct AuthPopup: Identifiable {
         controller.addUserScript(WKUserScript(source: ThemeInjection.layoutFlag(usesWindowLayout) + ThemeInjection.chromeScript,
                                               injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         if let themeScript {
-            // The fonts are large, so pages load them only while a theme is on.
-            if themeEnabled {
-                controller.addUserScript(WKUserScript(source: ThemeInjection.fontScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+            if let fonts {
+                controller.addUserScript(WKUserScript(source: ThemeInjection.fontScript(for: fonts), injectionTime: .atDocumentEnd, forMainFrameOnly: true))
             }
             controller.addUserScript(WKUserScript(source: themeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         }

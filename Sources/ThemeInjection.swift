@@ -3,7 +3,10 @@ import Foundation
 enum ThemeInjection {
     /// Encodes a value as a JavaScript literal, for embedding in injected scripts.
     private static func jsLiteral<T: Encodable>(_ value: T) -> String {
-        String(data: try! JSONEncoder().encode(value), encoding: .utf8)!
+        let encoder = JSONEncoder()
+        // Slashes are common in the embedded fonts' base64 and need no escaping.
+        encoder.outputFormatting = .withoutEscapingSlashes
+        return String(data: try! encoder.encode(value), encoding: .utf8)!
     }
 
     /// Runs the rest of an injected script only on Notion's pages and the offline preview.
@@ -21,38 +24,65 @@ enum ThemeInjection {
       };
     """
 
-    /// The bundled fonts, embedded once. Installed as its own user script so theme changes never re-encode them.
-    static let fontScript: String = {
-        let css = FontCatalog.families.compactMap { family -> String? in
+    /// The last fonts script built, shared by every tab since they all show the same theme.
+    @MainActor private static var fontCache: (fonts: ThemeFonts, script: String)?
+
+    /// A theme's two font families, embedded in the page as their own style element. Installed as its own user script
+    /// and resent only when the fonts change, so color and size edits never re-encode or re-compare them.
+    @MainActor static func fontScript(for fonts: ThemeFonts) -> String {
+        if let fontCache, fontCache.fonts == fonts { return fontCache.script }
+        let css = Set([fonts.heading, fonts.body]).sorted().compactMap { family -> String? in
             guard let url = FontCatalog.url(for: family), let data = try? Data(contentsOf: url) else { return nil }
             return "@font-face { font-family: '\(family)'; src: url(data:font/ttf;base64,\(data.base64EncodedString())) format('truetype'); font-weight: 100 900; font-display: swap; }"
         }.joined(separator: "\n")
-        return "(() => {\n\(themedPagesOnly)\n  window.__potionFonts = \(jsLiteral(css));\n})();"
-    }()
+        let script = """
+        (() => {
+        \(themedPagesOnly)
+          window.__potionFonts = \(jsLiteral(css));
+        \(putStyle)
+          if (document.documentElement) put('potion-fonts', window.__potionFonts);
+        })();
+        """
+        fontCache = (fonts, script)
+        return script
+    }
+
+    /// Notion's page title. Links to other pages, inside a page or in the sidebar, use the same class.
+    private static let pageTitle = ".notion-page-block:not(.notion-page-content *, .notion-sidebar *)"
+    private static let headingBlocks = ".notion-header-block, .notion-sub_header-block, .notion-sub_sub_header-block"
 
     static func css(for input: PotionTheme) -> String {
         let t = input.validated
+        let c = t.colors
+        // Page colors are written out rather than read from variables, and only the page's outer layers paint them:
+        // the text column stays transparent, so it can never show a different shade than the page around it.
+        // Fonts match text whether or not it's editable, since Notion makes trashed and shared pages read-only.
+        // Title and heading blocks set their own text color, both directly and through Notion's text variable, which
+        // also recolors text Notion marks with its default color. Block colors people choose stay as they are.
         return """
-        :root { --potion-bg: #\(t.background); --potion-surface: #\(t.surface); --potion-text: #\(t.text); --potion-accent: #\(t.accent); color-scheme: \(t.isDark ? "dark" : "light"); }
+        :root { --potion-bg: #\(c.background); --potion-surface: #\(c.surface); --potion-text: #\(c.text); --potion-accent: #\(c.accent); color-scheme: \(t.isDark ? "dark" : "light"); }
         :root, .notion-light-theme, .notion-dark-theme, .notion-app-inner {
-          --c-bacPri: #\(t.background) !important; --c-bacSec: #\(t.surface) !important; --c-bacTer: #\(t.surface) !important;
-          --c-bacEle: #\(t.background) !important; --c-popBac: #\(t.background) !important;
-          --c-texPri: #\(t.text) !important; --c-texSec: #\(t.text)B3 !important; --c-texTer: #\(t.text)8C !important;
-          --c-icoPri: #\(t.text) !important; --c-icoSec: #\(t.text)99 !important;
-          --c-borPri: #\(t.text)20 !important; --c-borSec: #\(t.text)14 !important;
-          --c-bluTexAccPri: #\(t.accent) !important; --ca-staHov: #\(t.accent)14 !important;
+          --c-bacPri: #\(c.background) !important; --c-bacSec: #\(c.surface) !important; --c-bacTer: #\(c.surface) !important;
+          --c-bacEle: #\(c.background) !important; --c-popBac: #\(c.background) !important;
+          --c-texPri: #\(c.text) !important; --c-texSec: #\(c.text)B3 !important; --c-texTer: #\(c.text)8C !important;
+          --c-icoPri: #\(c.text) !important; --c-icoSec: #\(c.text)99 !important;
+          --c-borPri: #\(c.text)20 !important; --c-borSec: #\(c.text)14 !important;
+          --c-bluTexAccPri: #\(c.accent) !important; --ca-staHov: #\(c.accent)14 !important;
         }
-        body, .notion-app-inner { background: var(--potion-bg) !important; color: var(--potion-text) !important; }
-        .notion-app-inner, .notion-page-content, .potion-preview { font-family: '\(t.bodyFont)', sans-serif !important; }
-        .notion-frame, .notion-scroller.vertical, .notion-page-content, .notion-topbar { background-color: var(--potion-bg) !important; }
-        .notion-sidebar-container, .notion-sidebar { background-color: var(--potion-surface) !important; }
+        body, .notion-app-inner { background: #\(c.background) !important; color: #\(c.text) !important; }
+        \(pageTitle), .potion-preview h1 { --c-texPri: #\(c.title) !important; color: #\(c.title); }
+        \(headingBlocks), .potion-preview h2, .potion-preview h3 { --c-texPri: #\(c.heading) !important; color: #\(c.heading); }
+        .notion-app-inner, .notion-page-content, .potion-preview { font-family: '\(t.fonts.body)', sans-serif !important; }
+        .notion-cursor-listener, .notion-frame, .notion-scroller.vertical, .notion-topbar { background-color: #\(c.background) !important; }
+        .notion-page-content { background-color: transparent !important; }
+        .notion-sidebar-container, .notion-sidebar { background-color: #\(c.surface) !important; }
         .notion-sidebar-container .notion-scroller.vertical { background-color: transparent !important; }
-        .notion-page-content, .notion-text-block [contenteditable=true], .notion-bulleted_list-block [contenteditable=true], .notion-numbered_list-block [contenteditable=true], .notion-to_do-block [contenteditable=true] { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
-        .notion-page-block [contenteditable=true], .notion-header-block [contenteditable=true], .notion-sub_header-block [contenteditable=true], .notion-sub_sub_header-block [contenteditable=true], .potion-preview h1, .potion-preview h2, .potion-preview h3 { font-family: '\(t.headingFont)', serif !important; }
+        .notion-page-content, .notion-text-block [contenteditable], .notion-bulleted_list-block [contenteditable], .notion-numbered_list-block [contenteditable], .notion-to_do-block [contenteditable] { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
+        :is(\(pageTitle), \(headingBlocks)) [contenteditable], .potion-preview h1, .potion-preview h2, .potion-preview h3 { font-family: '\(t.fonts.heading)', serif !important; }
         .notion-page-content a, .potion-preview a { color: var(--potion-accent) !important; }
-        .notion-page-content [style*="color: rgb(55, 53, 47)"], .notion-page-content [style*="color: rgba(255, 255, 255, 0.81)"] { color: var(--potion-text) !important; }
+        :is(.notion-page-content, \(pageTitle)) :is([style*="color: rgb(55, 53, 47)"], [style*="color: rgba(255, 255, 255, 0.81)"]) { color: var(--c-texPri) !important; }
         .notion-code-block, .notion-code-block *, code, pre { font-family: ui-monospace, SFMono-Regular, monospace !important; }
-        ::selection { background: #\(t.accent)40; }
+        ::selection { background: #\(c.accent)40; }
         .potion-preview { font-size: \(t.fontSize)px; line-height: \(t.lineHeight); }
         """
     }
@@ -65,7 +95,6 @@ enum ThemeInjection {
         \(putStyle)
           const apply = () => {
             if (!document.documentElement) return;
-            // The fonts never change, so they're added once rather than compared on every apply.
             if (window.__potionFonts && !document.getElementById('potion-fonts')) put('potion-fonts', window.__potionFonts);
             put('potion-theme', css);
           };
@@ -93,11 +122,14 @@ extension ThemeInjection {
 
     /// Lays Notion out like its Mac app: the sidebar's top row moves into the title bar, its collapse button just after
     /// the traffic lights and its inbox and new-page buttons at the right; the page column moves down to make room for
-    /// Potion's back, forward and tab row. The elements are tagged by `chromeScript`.
+    /// Potion's back, forward and tab row. The elements are tagged by `chromeScript`. The page and sidebar scroll
+    /// without visible scroll bars; wide tables and code blocks keep theirs.
     private static let layoutCSS = """
     .potion-sidebar-row { height: \(Int(headerHeight))px !important; padding-inline-start: \(Int(sidebarButtonX))px !important; }
     .potion-page-column { padding-top: \(Int(headerHeight))px !important; }
     .potion-below-header { top: \(Int(headerHeight))px !important; height: calc(100% - \(Int(headerHeight))px) !important; max-height: calc(100% - \(Int(headerHeight))px) !important; }
+    .notion-frame .notion-scroller.vertical, .notion-sidebar .notion-scroller.vertical { scrollbar-width: none !important; }
+    .notion-frame .notion-scroller.vertical::-webkit-scrollbar, .notion-sidebar .notion-scroller.vertical::-webkit-scrollbar { display: none !important; width: 0 !important; }
     """
 
     static func layoutFlag(_ enabled: Bool) -> String { "window.__potionLayout = \(enabled);\n" }

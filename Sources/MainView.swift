@@ -257,12 +257,16 @@ private struct AppearancePanel: View {
                 } else {
                     Text("Appearance").font(.title2.bold())
                 }
-                grid([PotionTheme.original] + PotionTheme.presets) { theme in
-                    if !theme.isOriginal {
-                        Button("Customize…") { edit(theme) }
+                ForEach(Array(PotionTheme.appearanceGroups.enumerated()), id: \.offset) { index, group in
+                    Text(group.title).font(.headline).padding(.top, index == 0 ? 20 : 28)
+                    // Notion's own look leads the light themes.
+                    grid((index == 0 ? [PotionTheme.original] : []) + group.themes) { theme in
+                        if !theme.isOriginal {
+                            Button("Customize…") { edit(theme) }
+                        }
                     }
+                    .padding(.top, 12)
                 }
-                .padding(.top, 20)
                 if !store.customs.isEmpty {
                     Text("My Themes").font(.headline).padding(.top, 28)
                     grid(store.customs) { theme in
@@ -301,6 +305,8 @@ private struct AppearancePanel: View {
                 ThemeCard(theme: theme, isSelected: store.activeID == theme.id) {
                     withAnimation(.snappy) { store.activate(theme.id) }
                     appearance.themeChosen()
+                } open: {
+                    if !theme.isOriginal { edit(theme) }
                 }
                 .contextMenu { menu(theme) }
             }
@@ -315,7 +321,7 @@ private struct BrowserView: View {
     var body: some View {
         WebViewHost(webView: workspace.webView)
             // Matches the page color so switching pages never flashes white under a dark theme.
-            .background(theme.map { Color(hex: $0.background) } ?? Color(nsColor: .textBackgroundColor))
+            .background(theme.map { Color(hex: $0.colors.background) } ?? Color(nsColor: .textBackgroundColor))
             .overlay(alignment: .top) {
                 LoadingBar(workspace: workspace)
                     .padding(.top, ThemeInjection.headerHeight)
