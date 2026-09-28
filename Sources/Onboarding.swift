@@ -114,43 +114,11 @@ private struct WebCard: View {
             .overlay {
                 if workspace.isLoading && workspace.progress < 0.5 { ProgressView().controlSize(.large) }
                 if let error = workspace.error {
-                    ContentUnavailableView {
-                        Label("Can’t Reach Notion", systemImage: "wifi.exclamationmark")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("Try Again") { workspace.reload() }
-                    }
-                    .background(.background, in: .rect(cornerRadius: 14))
+                    PageErrorView(title: "Can’t Reach Notion", error: error, workspace: workspace)
+                        .background(.background, in: .rect(cornerRadius: 14))
                 }
             }
             .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(.separator) }
             .shadow(color: .black.opacity(0.12), radius: 24, y: 8)
-    }
-}
-
-extension View {
-    /// Onboarding fills the window edge to edge: no title or toolbar, over a translucent window background.
-    func onboardingChrome() -> some View {
-        hiddenTitleBar().containerBackground(.thickMaterial, for: .window)
-    }
-
-    /// No window title or toolbar background, so content reaches the top edge.
-    func hiddenTitleBar() -> some View {
-        toolbar(removing: .title).toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-    }
-
-    /// Pins controls below scrolling content, separated by a divider, so nothing scrolls underneath them.
-    func bottomBar(@ViewBuilder _ content: () -> some View) -> some View {
-        VStack(spacing: 0) {
-            self
-            Divider()
-            content()
-        }
-    }
-
-    /// The primary action in a view: Liquid Glass on macOS 26, a filled button before that.
-    @ViewBuilder func prominentStyle() -> some View {
-        if #available(macOS 26, *) { buttonStyle(.glassProminent) } else { buttonStyle(.borderedProminent) }
     }
 }

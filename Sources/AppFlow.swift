@@ -36,7 +36,7 @@ import SwiftUI
         alert.informativeText = "Potion will remove Notion’s cookies and website data from this Mac and close your other tabs. Your themes stay."
         alert.addButton(withTitle: "Sign Out").hasDestructiveAction = true
         alert.addButton(withTitle: "Cancel")
-        let signOut = { [weak self] in
+        let signOut: () -> Void = { [weak self] in
             Task { @MainActor in
                 await Workspace.removeWebsiteData()
                 self?.didSignOut(keeping: window)
@@ -58,21 +58,28 @@ import SwiftUI
     }
 }
 
+/// A theme being edited: the theme it started from, the theme as it was when editing began, and the unsaved changes.
+struct ThemeEdit: Equatable {
+    let baseID: String
+    let original: PotionTheme
+    var draft: PotionTheme
+}
+
 /// Per-window state of the Appearance panel: the theme gallery, and the editor while a theme is being edited.
 @MainActor final class AppearanceState: ObservableObject {
     @Published var isShown = false {
         didSet {
             guard !isShown else { return }
             isChoosingFirstTheme = false
-            editing = nil
+            edit = nil
         }
     }
     /// True right after sign-in, while the panel invites the person to pick their first theme.
     @Published private(set) var isChoosingFirstTheme = false
-    /// The theme open in the editor, as it was when editing began.
-    @Published var editing: PotionTheme? { didSet { if editing == nil { preview = nil } } }
+    /// The theme open in the editor. Closing the panel ends the edit.
+    @Published var edit: ThemeEdit?
     /// The editor's unsaved changes, shown on every tab in the window in place of the saved theme.
-    @Published var preview: PotionTheme?
+    var preview: PotionTheme? { edit?.draft }
 
     /// Opens the panel so the first thing people do in their workspace is pick a theme.
     func beginFirstThemeChoice() {
@@ -92,12 +99,20 @@ import SwiftUI
         withAnimation(.smooth) { isShown.toggle() }
     }
     /// Edits a custom theme in place, or a preset as a new custom theme.
-    func customize(_ theme: PotionTheme) {
+    func customize(_ theme: PotionTheme) { begin(from: theme, as: theme.isCustom ? theme : theme.customCopy()) }
+    func newTheme(from theme: PotionTheme) { begin(from: theme, as: theme.customCopy()) }
+    private func begin(from theme: PotionTheme, as original: PotionTheme) {
         isShown = true
-        editing = theme.isCustom ? theme : theme.customCopy()
+        edit = ThemeEdit(baseID: theme.id, original: original, draft: original)
     }
-    func newTheme(from theme: PotionTheme) {
-        isShown = true
-        editing = theme.customCopy()
+    func saveEdit(to store: ThemeStore) {
+        guard let edit else { return }
+        store.save(edit.draft)
+        self.edit = nil
+    }
+    func cancelEdit() { edit = nil }
+    /// Choosing a theme other than the one being edited, from the Theme menu or Settings, abandons the edit.
+    func activeThemeChanged(to id: String) {
+        if let edit, edit.baseID != id { self.edit = nil }
     }
 }

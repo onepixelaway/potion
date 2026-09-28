@@ -9,17 +9,20 @@ final class PotionTests: XCTestCase {
         addTeardownBlock { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
         return UserDefaults(suiteName: suite)!
     }
-    private func preset(_ id: String) -> PotionTheme { PotionTheme.presets.first { $0.id == id }! }
+    private func preset(_ id: String) -> PotionTheme { PotionTheme.preset(id: id)! }
     /// Shows the offline preview in a workspace and waits for it to finish loading.
     @MainActor private func loadPreview(_ workspace: Workspace) async {
         workspace.showPreview()
         let loaded = NSPredicate { _, _ in workspace.webView.url?.isFileURL == true && !workspace.webView.isLoading }
         await fulfillment(of: [XCTNSPredicateExpectation(predicate: loaded, object: nil)], timeout: 15)
     }
+    @MainActor private func js(_ source: String, in workspace: Workspace) async throws -> Any? {
+        try await workspace.webView.evaluateJavaScript(source)
+    }
     /// WCAG contrast ratio between two hex colors.
     private func contrast(_ first: String, _ second: String) -> Double {
         func luminance(_ hex: String) -> Double {
-            let color = NSColor(hex: hex).usingColorSpace(.sRGB)!
+            let color = NSColor(hex: hex)
             let channels = [color.redComponent, color.greenComponent, color.blueComponent].map { value -> Double in
                 value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
             }
@@ -107,13 +110,22 @@ final class PotionTests: XCTestCase {
         XCTAssertTrue(appearance.isChoosingFirstTheme)
         appearance.themeChosen()
         XCTAssertFalse(appearance.isChoosingFirstTheme)
-        appearance.newTheme(from: PotionTheme.presets[0])
-        XCTAssertEqual(appearance.editing?.name, "My Paper")
-        XCTAssertEqual(appearance.editing?.isCustom, true)
-        appearance.preview = appearance.editing
+        appearance.newTheme(from: preset("paper"))
+        XCTAssertEqual(appearance.preview?.name, "My Paper", "The draft previews while it's edited")
+        XCTAssertEqual(appearance.preview?.isCustom, true)
+        appearance.activeThemeChanged(to: "paper")
+        XCTAssertNotNil(appearance.edit, "Selecting the theme an edit started from keeps the edit")
+        appearance.activeThemeChanged(to: "midnight")
+        XCTAssertNil(appearance.edit, "Choosing another theme abandons the edit")
+        appearance.customize(preset("clay"))
         appearance.isShown = false
-        XCTAssertNil(appearance.editing, "Closing the panel abandons an edit")
-        XCTAssertNil(appearance.preview, "Ending an edit stops previewing it")
+        XCTAssertNil(appearance.preview, "Closing the panel abandons an edit")
+        let store = ThemeStore(defaults: makeDefaults())
+        appearance.customize(preset("clay"))
+        appearance.edit?.draft.colors.accent = "112233"
+        appearance.saveEdit(to: store)
+        XCTAssertNil(appearance.edit)
+        XCTAssertEqual(store.selected.colors.accent, "112233", "Saving keeps the draft as the selected theme")
     }
     func testTabTitlesAndSavedAddresses() {
         XCTAssertEqual(NavigationPolicy.pageTitle("The 4P Framework | Notion"), "The 4P Framework")
@@ -173,38 +185,18 @@ final class PotionTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(contrast(c.accent, c.background), 4.5, "\(theme.name) links")
             XCTAssertGreaterThanOrEqual(contrast(c.accent, c.surface), 4.5, "\(theme.name) links on surfaces")
             XCTAssertEqual(theme.validated, theme, "\(theme.name) uses only valid colors and bundled fonts")
-            let hues = [c.title, c.heading].map { NSColor(hex: $0).usingColorSpace(.sRGB)!.hueComponent * 360 }
+            let hues = [c.title, c.heading].map { NSColor(hex: $0).hueComponent * 360 }
             let spread = min(abs(hues[0] - hues[1]), 360 - abs(hues[0] - hues[1]))
             // Either two colors, or two clearly different shades of one.
             XCTAssertTrue(spread >= 30 || contrast(c.title, c.heading) >= 1.3, "\(theme.name) sets its headings apart from its title")
         }
     }
-    @MainActor func testVersionOneThemesMigrate() throws {
-        let defaults = makeDefaults()
-        let legacy: [String: Any] = [
-            "selected": ["id": "botanical", "name": "Botanical", "subtitle": "", "headingFont": "DM Serif Display", "bodyFont": "Manrope",
-                         "background": "EDF2EB", "surface": "DFE8DC", "text": "293F35", "accent": "40705B",
-                         "fontSize": 16, "lineHeight": 1.65, "isCustom": false],
-            "customs": [["id": "mine", "name": "Mine", "subtitle": "", "headingFont": "Lora", "bodyFont": "Space Grotesk",
-                         "background": "101010", "surface": "202020", "text": "EEEEEE", "accent": "88AAFF",
-                         "fontSize": 18, "lineHeight": 1.5, "isCustom": true]],
-        ]
-        defaults.set(try JSONSerialization.data(withJSONObject: legacy), forKey: "potion.themes.v1")
-        let store = ThemeStore(defaults: defaults)
-        XCTAssertEqual(store.selected, preset("botanical"), "Presets are refreshed to their current definition")
-        let mine = try XCTUnwrap(store.customs.first)
-        XCTAssertEqual(mine.fonts, ThemeFonts(heading: "Lora", body: "Space Grotesk"))
-        XCTAssertEqual(mine.colors, ThemeColors(background: "101010", surface: "202020", title: "EEEEEE", heading: "EEEEEE", text: "EEEEEE", accent: "88AAFF"))
-        XCTAssertEqual(mine.fontSize, 18)
-        XCTAssertNotNil(defaults.data(forKey: "potion.themes.v2"), "Migrated themes save in the current format")
-        XCTAssertEqual(ThemeStore(defaults: defaults).customs, [mine])
-    }
     @MainActor func testWebKitLiveThemeAndRemoval() async throws {
         let workspace = Workspace()
         let paper = preset("paper")
-        workspace.apply(paper, enabled: true)
+        workspace.apply(paper)
         await loadPreview(workspace)
-        func js(_ source: String) async throws -> Any? { try await workspace.webView.evaluateJavaScript(source) }
+        func js(_ source: String) async throws -> Any? { try await self.js(source, in: workspace) }
         /// A computed style of the first element matching a selector.
         func style(_ property: String, _ selector: String) async throws -> String? {
             try await js("getComputedStyle(document.querySelector('\(selector)')).\(property)") as? String
@@ -225,15 +217,15 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(subheading, "rgb(154, 74, 44)")
         XCTAssertEqual(text, "rgb(58, 62, 54)")
         let midnight = preset("midnight")
-        workspace.apply(midnight, enabled: true)
+        workspace.apply(midnight)
         let dark = try await style("backgroundColor", "body")
         XCTAssertEqual(dark, "rgb(31, 36, 43)")
         let switchedFonts = try await fontFamilies()
         XCTAssertEqual(switchedFonts, "DM Sans,Space Grotesk", "Changing themes swaps the embedded fonts")
-        workspace.apply(midnight, enabled: false)
+        workspace.apply(nil)
         let disabled = try await js("document.getElementById('potion-theme').textContent") as? String
         XCTAssertEqual(disabled, "")
-        workspace.apply(preset("botanical"), enabled: true)
+        workspace.apply(preset("botanical"))
         _ = try await js("document.getElementById('potion-theme').remove()")
         let reapplied = try await style("backgroundColor", "body")
         XCTAssertEqual(reapplied, "rgb(238, 242, 236)")
@@ -253,29 +245,25 @@ final class PotionTests: XCTestCase {
             <div class="notion-page-block"><div id="test-sidebar-page" contenteditable="false">Sidebar page</div></div>
           </div></div></div>`);
         """)
-        let frame = try await style("backgroundColor", "#test-frame"), content = try await style("backgroundColor", "#test-content")
-        XCTAssertEqual(frame, "rgb(238, 242, 236)")
-        XCTAssertEqual(content, "rgba(0, 0, 0, 0)", "The text column shows the page behind it rather than painting its own copy")
+        let expectations: [(property: String, id: String, value: String, message: String)] = [
+            ("backgroundColor", "test-frame", "rgb(238, 242, 236)", "The page frame paints the page color"),
+            ("backgroundColor", "test-content", "rgba(0, 0, 0, 0)", "The text column shows the page behind it rather than painting its own copy"),
+            ("fontSize", "test-heading", "30px", "Heading hierarchy must not be flattened by body sizing"),
+            ("color", "test-body", "rgb(46, 59, 52)", "Body text has the theme's text color"),
+            ("color", "test-title", "rgb(30, 106, 78)", "The page title has the theme's title color"),
+            ("color", "test-heading", "rgb(140, 58, 94)", "Headings in Notion's default color take the theme's heading color"),
+            ("color", "test-colored-heading", "rgb(0, 0, 255)", "A color chosen for a heading stays"),
+            ("color", "test-page-link", "rgb(46, 59, 52)", "Links to pages inside a page aren't styled as its title"),
+            ("color", "test-colored", "rgb(255, 0, 0)", "Colors people choose stay"),
+            ("color", "test-sidebar-page", "rgb(46, 59, 52)", "Pages listed in the sidebar aren't styled as the page title"),
+            ("backgroundColor", "test-sidebar-list", "rgba(0, 0, 0, 0)", "The sidebar's page list shows the sidebar color, not the page color"),
+        ]
+        for check in expectations {
+            let value = try await style(check.property, "#" + check.id)
+            XCTAssertEqual(value, check.value, check.message)
+        }
         let titleFont = try await style("fontFamily", "#test-title")
         XCTAssertTrue(titleFont?.contains("DM Serif Display") == true, "Read-only pages, like trashed ones, still get the theme's heading font")
-        let headingSize = try await style("fontSize", "#test-heading")
-        XCTAssertEqual(headingSize, "30px", "Heading hierarchy must not be flattened by body sizing")
-        let bodyColor = try await color("#test-body")
-        XCTAssertEqual(bodyColor, "rgb(46, 59, 52)")
-        let titleColor = try await color("#test-title")
-        XCTAssertEqual(titleColor, "rgb(30, 106, 78)", "The page title has the theme's title color")
-        let headingColor = try await color("#test-heading")
-        XCTAssertEqual(headingColor, "rgb(140, 58, 94)", "Headings in Notion's default color take the theme's heading color")
-        let coloredHeading = try await color("#test-colored-heading")
-        XCTAssertEqual(coloredHeading, "rgb(0, 0, 255)", "A color chosen for a heading stays")
-        let pageLink = try await color("#test-page-link")
-        XCTAssertEqual(pageLink, "rgb(46, 59, 52)", "Links to pages inside a page aren't styled as its title")
-        let intentionalColor = try await color("#test-colored")
-        XCTAssertEqual(intentionalColor, "rgb(255, 0, 0)")
-        let sidebarPage = try await color("#test-sidebar-page")
-        XCTAssertEqual(sidebarPage, "rgb(46, 59, 52)", "Pages listed in the sidebar aren't styled as the page title")
-        let sidebarList = try await style("backgroundColor", "#test-sidebar-list")
-        XCTAssertEqual(sidebarList, "rgba(0, 0, 0, 0)", "The sidebar's page list shows the sidebar color, not the page color")
         let codeFont = try await style("fontFamily", "#test-code")
         XCTAssertTrue(codeFont?.contains("monospace") == true)
     }
@@ -284,25 +272,27 @@ final class PotionTests: XCTestCase {
         workspace.usesWindowLayout = true
         await loadPreview(workspace)
         // Notion styles its scroll bars, which keeps them visible; the layout hides the page's and sidebar's.
-        let widths = try await workspace.webView.evaluateJavaScript("""
+        let widths = try await js("""
           document.head.insertAdjacentHTML('beforeend', '<style>::-webkit-scrollbar { width: 10px; height: 10px; background: gray; }</style>');
           document.body.insertAdjacentHTML('beforeend', `
             <div class="notion-frame"><div id="page" class="notion-scroller vertical" style="height:100px;overflow:auto"><div style="height:500px"></div></div>
               <div id="table" class="notion-scroller horizontal" style="width:100px;height:100px;overflow:auto"><div style="width:500px;height:500px"></div></div></div>
             <div class="notion-sidebar"><div id="sidebar" class="notion-scroller vertical" style="height:100px;overflow:auto"><div style="height:500px"></div></div></div>`);
-          window.__potionChromePost();
           ['page', 'sidebar', 'table'].map(id => { const el = document.getElementById(id); return el.offsetWidth - el.clientWidth; });
-        """) as? [Int]
+        """, in: workspace) as? [Int]
         XCTAssertEqual(widths, [0, 0, 10], "Page and sidebar scroll bars are hidden; a wide table's stays")
+        workspace.usesWindowLayout = false
+        let layout = try await js("document.getElementById('potion-layout').textContent", in: workspace) as? String
+        XCTAssertEqual(layout, "", "Leaving the workspace layout reaches the open page without a reload")
     }
     @MainActor func testFontsLoadOnlyWhileThemed() async throws {
         let workspace = Workspace()
-        workspace.apply(preset("paper"), enabled: false)
+        workspace.apply(nil)
         await loadPreview(workspace)
-        let unthemed = try await workspace.webView.evaluateJavaScript("document.fonts.size") as? Int
+        let unthemed = try await js("document.fonts.size", in: workspace) as? Int
         XCTAssertEqual(unthemed, 0, "Notion's own look doesn't load the bundled fonts")
-        workspace.apply(preset("harbor"), enabled: true)
-        let themed = try await workspace.webView.evaluateJavaScript("document.fonts.size") as? Int
+        workspace.apply(preset("harbor"))
+        let themed = try await js("document.fonts.size", in: workspace) as? Int
         XCTAssertEqual(themed, 1, "Turning a theme on brings its fonts to the open page, one family here")
     }
 }

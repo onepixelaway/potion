@@ -2,7 +2,7 @@ import SwiftUI
 
 extension PotionTheme {
     /// Stands in for Notion's own styling wherever themes are listed.
-    static let original = PotionTheme(id: ThemeStore.originalID, name: "Notion Default", subtitle: "Notion’s own look.",
+    static let original = PotionTheme(id: ThemeStore.originalID, name: "Notion Default",
                                       fonts: ThemeFonts(heading: "", body: ""),
                                       colors: ThemeColors(background: "FFFFFF", surface: "F1F1EF", title: "37352F",
                                                           heading: "37352F", text: "37352F", accent: "2383E2"))

@@ -7,25 +7,17 @@ extension FocusedValues {
     @Entry var workspace: Workspace?
 }
 
-/// The theme a window's tabs show, and whether it's on.
-struct ThemeStyling: Equatable {
-    var theme: PotionTheme
-    var enabled: Bool
-    /// The theme restyling Notion, or nil for Notion's own look.
-    var active: PotionTheme? { enabled ? theme : nil }
-}
-
 /// A window's tabs, drawn in the header as in Notion's app. Each tab has its own web view; all share Notion's cookies.
 @MainActor final class BrowserTabs: ObservableObject {
     @Published private(set) var tabs: [Workspace]
     @Published private(set) var current: Workspace
     weak var window: NSWindow?
-    /// What every tab shows, including tabs opened later.
-    @Published private(set) var styling = ThemeStyling(theme: .standard, enabled: false)
+    /// The theme every tab shows, including tabs opened later, or nil for Notion's own look.
+    @Published private(set) var theme: PotionTheme?
     /// Notion's Mac-app layout, on once the person is in their workspace.
     var usesWindowLayout = false { didSet { tabs.forEach { $0.usesWindowLayout = usesWindowLayout } } }
     /// The last snapshot this window saved, so unchanged tabs don't overwrite another window's.
-    private var savedSnapshot = ""
+    private var savedSnapshot: Data?
 
     /// The open pages and selected tab, saved so the most recently changed window's tabs reopen at the next launch.
     private struct Snapshot: Codable { var urls: [URL?]; var selected: Int }
@@ -40,16 +32,14 @@ struct ThemeStyling: Equatable {
         configure(first)
     }
 
-    @discardableResult
-    func newTab(_ url: URL? = nil, select: Bool = true) -> Workspace {
+    func newTab(_ url: URL? = nil, select: Bool = true) {
         let tab = Workspace()
         configure(tab)
-        tab.apply(styling.theme, enabled: styling.enabled)
+        tab.apply(theme)
         tabs.insert(tab, at: (currentIndex ?? tabs.count - 1) + 1)
         tab.open(url ?? Workspace.homeURL)
         if select { current = tab }
         persist()
-        return tab
     }
     func select(_ tab: Workspace) {
         guard tabs.contains(tab) else { return }
@@ -76,14 +66,14 @@ struct ThemeStyling: Equatable {
         select(tabs[(index + offset + tabs.count) % tabs.count])
     }
 
-    func apply(_ styling: ThemeStyling) {
-        self.styling = styling
-        tabs.forEach { $0.apply(styling.theme, enabled: styling.enabled) }
+    func apply(_ theme: PotionTheme?) {
+        self.theme = theme
+        tabs.forEach { $0.apply(theme) }
     }
 
-    /// Reopens the saved tabs, or the last page when there is nothing to restore.
+    /// Reopens the saved tabs, or the workspace when there is nothing to restore.
     func restore() {
-        guard let data = defaults.string(forKey: Self.snapshotKey)?.data(using: .utf8), let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data),
+        guard let data = defaults.data(forKey: Self.snapshotKey), let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data),
               !snapshot.urls.isEmpty else { current.open(); return }
         current.open(snapshot.urls[0])
         for url in snapshot.urls.dropFirst() { newTab(url, select: false) }
@@ -97,29 +87,8 @@ struct ThemeStyling: Equatable {
     }
     private func persist() {
         let value = Snapshot(urls: tabs.map(\.pageURL), selected: currentIndex ?? 0)
-        guard let data = try? JSONEncoder().encode(value), let string = String(data: data, encoding: .utf8), string != savedSnapshot else { return }
-        savedSnapshot = string
-        defaults.set(string, forKey: Self.snapshotKey)
-    }
-}
-
-/// Reports the NSWindow hosting a SwiftUI view as soon as the view joins it.
-struct WindowAccessor: NSViewRepresentable {
-    let onWindow: (NSWindow) -> Void
-
-    func makeNSView(context: Context) -> AccessorView { AccessorView(onWindow: onWindow) }
-    func updateNSView(_ view: AccessorView, context: Context) {}
-
-    final class AccessorView: NSView {
-        let onWindow: (NSWindow) -> Void
-        init(onWindow: @escaping (NSWindow) -> Void) {
-            self.onWindow = onWindow
-            super.init(frame: .zero)
-        }
-        required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            if let window { onWindow(window) }
-        }
+        guard let data = try? JSONEncoder().encode(value), data != savedSnapshot else { return }
+        savedSnapshot = data
+        defaults.set(data, forKey: Self.snapshotKey)
     }
 }
