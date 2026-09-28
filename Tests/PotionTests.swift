@@ -285,6 +285,31 @@ final class PotionTests: XCTestCase {
         let layout = try await js("document.getElementById('potion-layout').textContent", in: workspace) as? String
         XCTAssertEqual(layout, "", "Leaving the workspace layout reaches the open page without a reload")
     }
+    @MainActor func testThemeSetsNotionsModeAndRestoresItsOwn() async throws {
+        let workspace = Workspace()
+        workspace.apply(preset("paper"))
+        await loadPreview(workspace)
+        /// Whether the body and Notion's app container are marked dark, as "body,app".
+        func mode() async throws -> String? {
+            try await js("""
+              [document.body, document.getElementById('app')].map(node => node.classList.contains('notion-dark-theme') && !node.classList.contains('notion-light-theme')).join(',') + (document.body.classList.contains('dark') ? ',dark' : '')
+            """, in: workspace) as? String
+        }
+        // Notion with its appearance set to Dark.
+        _ = try await js("""
+          localStorage.setItem('theme', '{"mode":"dark"}');
+          document.body.className = 'notion-body dark notion-dark-theme';
+          document.body.insertAdjacentHTML('beforeend', '<div id="app" class="notion-app-inner notion-dark-theme"></div>');
+        """, in: workspace)
+        let themed = try await mode()
+        XCTAssertEqual(themed, "false,false", "A light theme shows Notion's light mode, so its controls are drawn for a light page")
+        _ = try await js("document.body.className = 'notion-body dark notion-dark-theme'", in: workspace)
+        let reapplied = try await mode()
+        XCTAssertEqual(reapplied, "false,false", "Notion setting its own mode again doesn't override the theme")
+        workspace.apply(nil)
+        let restored = try await mode()
+        XCTAssertEqual(restored, "true,true,dark", "Notion's own look goes back to its appearance setting")
+    }
     @MainActor func testFontsLoadOnlyWhileThemed() async throws {
         let workspace = Workspace()
         workspace.apply(nil)

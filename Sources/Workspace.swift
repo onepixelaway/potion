@@ -29,6 +29,8 @@ struct AuthPopup: Identifiable {
     private(set) var sidebarWidth: CGFloat = 0
     /// Unread notifications in Notion's inbox.
     private(set) var inboxCount = 0
+    /// Whether Notion's page is in its dark mode, or nil before a Notion page reports it.
+    private(set) var isPageDark: Bool?
     /// What this tab's pages show. Changes reach the open page right away; the user scripts, which carry the style to
     /// later pages and include the large fonts, are reinstalled only when a page loads, so an edit doesn't resend them
     /// on every tick.
@@ -163,6 +165,7 @@ struct AuthPopup: Identifiable {
               let body = message.body as? [String: Any], let width = body["sidebarWidth"] as? NSNumber else { return }
         update(\.sidebarWidth, CGFloat(width.doubleValue))
         update(\.inboxCount, (body["inboxCount"] as? NSNumber)?.intValue ?? 0)
+        update(\.isPageDark, body["dark"] as? Bool)
     }
 
     // MARK: Navigation
