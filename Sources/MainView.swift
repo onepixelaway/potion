@@ -11,20 +11,16 @@ struct MainView: View {
         ZStack(alignment: .topLeading) {
             BrowserView(theme: tabs.theme, workspace: workspace)
             WindowHeader(tabs: tabs, workspace: workspace, appearance: appearance)
-                // The header sits over the page, so it follows the page's light or dark mode: the theme's, or with
-                // Notion's own look, whichever Notion's appearance setting shows. The web view keeps following the
-                // window, so Notion's "Use system setting" still follows the Mac.
-                .transformEnvironment(\.colorScheme) { scheme in
-                    if let dark = tabs.theme?.isDark ?? workspace.isPageDark { scheme = dark ? .dark : .light }
-                }
         }
         .ignoresSafeArea(edges: .top)
         // The title names the window in the Window menu; the header itself shows tabs.
         .navigationTitle(workspace.displayTitle)
         .hiddenTitleBar()
         .modifier(TitleBarHeight())
-        // Header controls over the page follow the theme's light or dark appearance, including one being edited.
-        .preferredColorScheme(tabs.theme.map { $0.isDark ? .dark : .light })
+        // The window, with its header and Appearance panel, follows the page's light or dark mode: the theme's,
+        // including one being edited, or with Notion Default, Notion's own appearance setting. When Notion follows the
+        // system, so does the window, which keeps the web view, and with it Notion, following the Mac.
+        .preferredColorScheme(tabs.theme.map { $0.isDark ? .dark : .light } ?? workspace.notionColorScheme)
         .inspector(isPresented: $appearance.isShown) {
             AppearancePanel(store: store, appearance: appearance)
                 .inspectorColumnWidth(min: 290, ideal: 310, max: 380)
@@ -336,7 +332,7 @@ private struct BrowserView: View {
         WebViewHost(webView: workspace.webView)
             // Matches the page color so switching pages never flashes white under a dark page.
             .background(theme.map { Color(hex: $0.colors.background) }
-                        ?? workspace.isPageDark.map { Color(hex: $0 ? "191919" : "FFFFFF") }
+                        ?? workspace.notionColorScheme.map { Color(hex: $0 == .dark ? "191919" : "FFFFFF") }
                         ?? Color(nsColor: .textBackgroundColor))
             .overlay(alignment: .top) {
                 LoadingBar(workspace: workspace)

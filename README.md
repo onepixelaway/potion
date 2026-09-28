@@ -36,7 +36,7 @@ Potion's shortcuts stay clear of Notion's own (⌘E, ⌘N, ⌘⌥1–9 and so on
 
 ## How it works
 
-Each tab is a WKWebView showing Notion's web app. A theme is CSS injected into Notion's pages, along with the theme's two font families embedded from the app bundle, so pages make no font requests. A small page script puts the styles back when Notion replaces the page. It also moves Notion's sidebar row into the title bar, and reports the sidebar's width, the inbox count and the page's light or dark mode to the window's header.
+Each tab is a WKWebView showing Notion's web app. A theme is CSS injected into Notion's pages, along with the theme's two font families embedded from the app bundle, so pages make no font requests. A small page script puts the styles back when Notion replaces the page. It also moves Notion's sidebar row into the title bar, and reports the sidebar's width, the inbox count and Notion's own Light or Dark setting so the window matches the page.
 
 Notion and its identity providers render their own sign-in forms, and Potion never reads credentials or exports cookies. The web view identifies as Safari so Google allows sign-in. Themes are injected only into Notion's pages and the offline preview, never into Notion's login page or identity providers, and theme colors and font names are validated before any CSS is generated. Links to other sites open in your default browser, while redirects during sign-in, including enterprise SSO, stay in the window. Preferences are saved in UserDefaults under `com.potion.mac`.
 

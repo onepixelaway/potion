@@ -320,6 +320,27 @@ final class PotionTests: XCTestCase {
         let restored = try await mode()
         XCTAssertEqual(restored, "true,true,dark", "Notion's own look goes back to its appearance setting")
     }
+    @MainActor func testDarkThemeSetsNotionsModeWhenNotionIsLight() async throws {
+        let workspace = Workspace()
+        await loadPreview(workspace)
+        /// The app container's classes and whether the body is marked dark.
+        func mode() async throws -> String? {
+            try await js("[document.getElementById('app').className, document.body.classList.contains('dark')].join()",
+                         in: workspace) as? String
+        }
+        // Notion with its appearance set to Light marks its app container, not the body.
+        _ = try await js("""
+          localStorage.setItem('theme', '{"mode":"light"}');
+          document.body.className = 'notion-body';
+          document.body.insertAdjacentHTML('beforeend', '<div id="app" class="notion-app-inner notion-light-theme"></div>');
+        """, in: workspace)
+        workspace.apply(preset("midnight"))
+        let themed = try await mode()
+        XCTAssertEqual(themed, "notion-app-inner notion-dark-theme,true", "A dark theme shows Notion's dark mode")
+        workspace.apply(nil)
+        let restored = try await mode()
+        XCTAssertEqual(restored, "notion-app-inner notion-light-theme,false", "Notion's own look goes back to Light")
+    }
     @MainActor func testFontsLoadOnlyWhileThemed() async throws {
         let workspace = Workspace()
         workspace.apply(nil)
