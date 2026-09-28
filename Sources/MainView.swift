@@ -11,6 +11,12 @@ struct MainView: View {
         ZStack(alignment: .topLeading) {
             BrowserView(theme: tabs.theme, workspace: workspace)
             WindowHeader(tabs: tabs, workspace: workspace, appearance: appearance)
+                // The header sits over the page, so it follows the page's light or dark mode: the theme's, or with
+                // Notion's own look, whichever Notion's appearance setting shows. The web view keeps following the
+                // window, so Notion's "Use system setting" still follows the Mac.
+                .transformEnvironment(\.colorScheme) { scheme in
+                    if let dark = tabs.theme?.isDark ?? workspace.isPageDark { scheme = dark ? .dark : .light }
+                }
         }
         .ignoresSafeArea(edges: .top)
         // The title names the window in the Window menu; the header itself shows tabs.
@@ -325,8 +331,10 @@ private struct BrowserView: View {
 
     var body: some View {
         WebViewHost(webView: workspace.webView)
-            // Matches the page color so switching pages never flashes white under a dark theme.
-            .background(theme.map { Color(hex: $0.colors.background) } ?? Color(nsColor: .textBackgroundColor))
+            // Matches the page color so switching pages never flashes white under a dark page.
+            .background(theme.map { Color(hex: $0.colors.background) }
+                        ?? workspace.isPageDark.map { Color(hex: $0 ? "191919" : "FFFFFF") }
+                        ?? Color(nsColor: .textBackgroundColor))
             .overlay(alignment: .top) {
                 LoadingBar(workspace: workspace)
                     .padding(.top, ThemeInjection.headerHeight)

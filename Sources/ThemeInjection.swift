@@ -94,7 +94,8 @@ enum ThemeInjection {
     /// Sends a page its style through `runtime`. The fonts, which are large and rarely change, go only when asked for.
     @MainActor static func update(_ style: PageStyle, withFonts: Bool) -> String {
         let fonts = withFonts ? ", fonts: \(fontsLiteral(style.fonts))" : ""
-        return "window.__potion?.update({ css: \(jsLiteral(style.theme.map(css(for:)) ?? "")), layout: \(style.layout)\(fonts) });"
+        let dark = style.theme.map { "\($0.isDark)" } ?? "null"
+        return "window.__potion?.update({ css: \(jsLiteral(style.theme.map(css(for:)) ?? "")), dark: \(dark), layout: \(style.layout)\(fonts) });"
     }
 }
 
@@ -122,8 +123,8 @@ extension ThemeInjection {
     /// Installed on every page before its style. Defines `window.__potion.update`, which puts the theme, its fonts and
     /// the layout on the page as three style elements, and one observer that puts them back whenever Notion replaces
     /// the part of the page holding them. It also tags Notion's sidebar row and page column for `layoutCSS` and reports
-    /// the sidebar's width (so Potion's tab row starts at its edge) and the inbox's unread count (shown on Potion's own
-    /// inbox button while the sidebar is collapsed). That runs at most once a frame, and only when something changes:
+    /// the sidebar's width (so Potion's tab row starts at its edge), the inbox's unread count (shown on Potion's own
+    /// inbox button while the sidebar is collapsed), and whether the page is dark (so Potion's header matches it). That runs at most once a frame, and only when something changes:
     /// elements added or removed anywhere, the sidebar resizing (its collapse animates its width), and any change inside
     /// the sidebar, including text such as the inbox badge. Text edits elsewhere, like typing in a page, don't wake it.
     static let runtime = """
@@ -131,7 +132,7 @@ extension ThemeInjection {
     \(themedPagesOnly)
       if (window.__potion) return;
       const layoutCSS = \(jsLiteral(layoutCSS));
-      const state = { css: '', fonts: '', layout: false };
+      const state = { css: '', fonts: '', dark: null, layout: false };
     \(putStyle)
       const styleIDs = ['potion-fonts', 'potion-theme', 'potion-layout'];
       const render = () => {
@@ -139,6 +140,27 @@ extension ThemeInjection {
         put('potion-fonts', state.fonts);
         put('potion-theme', state.css);
         put('potion-layout', state.layout ? layoutCSS : '');
+        showMode();
+      };
+      // Notion marks its light or dark mode with classes on the body and its app containers, following its own
+      // appearance setting. While a theme is on, the page shows the theme's mode instead, so Notion draws its settings,
+      // menus and controls for the theme's background. Turning the theme off goes back to Notion's own setting.
+      const modeClasses = '.notion-dark-theme, .notion-light-theme';
+      const isNotionPage = () => document.body?.matches(modeClasses) ?? false;
+      const notionDark = () => {
+        let mode;
+        try { mode = JSON.parse(localStorage.getItem('theme'))?.mode; } catch {}
+        return mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      };
+      let themedMode = false;
+      const showMode = () => {
+        if (!isNotionPage() || (state.dark === null && !themedMode)) return;
+        themedMode = state.dark !== null;
+        const dark = state.dark ?? notionDark();
+        const [on, off] = dark ? ['notion-dark-theme', 'notion-light-theme'] : ['notion-light-theme', 'notion-dark-theme'];
+        if (!document.querySelector('.' + off) && document.body.classList.contains('dark') === dark) return;
+        document.querySelectorAll('.' + off).forEach(node => node.classList.replace(off, on));
+        document.body.classList.toggle('dark', dark);
       };
       const tag = () => {
         const sidebar = document.querySelector('.notion-sidebar');
@@ -183,6 +205,7 @@ extension ThemeInjection {
       const sidebarChanges = new MutationObserver(schedule);
       const refresh = () => {
         if (!document.body) return;
+        showMode();
         tag();
         const container = document.querySelector('.notion-sidebar-container');
         if (container !== observed) {
@@ -199,7 +222,7 @@ extension ThemeInjection {
           const box = container.getBoundingClientRect();
           if (box.left <= 1 && box.width > 40 && getComputedStyle(container).visibility !== 'hidden') width = Math.round(box.right);
         }
-        const message = { sidebarWidth: width, inboxCount: inboxCount() };
+        const message = { sidebarWidth: width, inboxCount: inboxCount(), dark: isNotionPage() ? document.body.classList.contains('notion-dark-theme') : null };
         const key = JSON.stringify(message);
         if (handler && key !== last) { last = key; handler.postMessage(message); }
       };
@@ -209,6 +232,8 @@ extension ThemeInjection {
         if (styleIDs.some(id => !document.getElementById(id))) render();
         schedule();
       }).observe(document.documentElement, { childList: true, subtree: true });
+      // Notion changes the body's mode classes when its appearance setting changes.
+      if (document.body) new MutationObserver(() => { showMode(); schedule(); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
       render();
       refresh();
     })();
