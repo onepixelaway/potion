@@ -33,8 +33,8 @@ enum NavigationPolicy {
         components?.fragment = nil
         return components?.url
     }
-    /// Pages that always load in Potion: Notion, the identity providers it signs in with, and blank pages.
     static func isBlank(_ url: URL) -> Bool { url.absoluteString == "about:blank" }
+    /// Pages that always load in Potion: Notion, the identity providers it signs in with, and blank pages.
     static func isTrusted(_ url: URL) -> Bool { isBlank(url) || isNotion(url) || isAuthentication(url) }
     static func canOpenExternally(_ url: URL) -> Bool { ["https", "http", "mailto"].contains(url.scheme?.lowercased() ?? "") }
     /// Opens a link in the person's browser or mail app, if it's a kind those can open.

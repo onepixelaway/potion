@@ -109,14 +109,14 @@ struct AuthPopup: Identifiable {
     }
     func openLogin() { load(Self.loginURL) }
     /// Opens a Notion page, or else the login page, which sends signed-in people on to their workspace.
-    func open(_ url: URL? = nil) { load(url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil } ?? Self.loginURL) }
+    func open(_ url: URL?) { load(url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil } ?? Self.loginURL) }
     private func load(_ url: URL) {
         error = nil
         webView.load(URLRequest(url: url))
     }
     func reload() {
         error = nil
-        if webView.url == nil { open() } else { webView.reload() }
+        if webView.url == nil { openLogin() } else { webView.reload() }
     }
     func goBack() { webView.goBack() }
     func goForward() { webView.goForward() }
@@ -175,10 +175,13 @@ struct AuthPopup: Identifiable {
     }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { handle(error, in: webView) }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { handle(error, in: webView) }
+    /// WebKit's “frame load interrupted by policy change”, reported when this delegate turns a navigation into a
+    /// download or cancels it. Neither is a failure worth showing.
+    private static let frameLoadInterruptedByPolicyChange = 102
     private func handle(_ error: Error, in webView: WKWebView) {
         let nsError = error as NSError
         guard webView === self.webView, nsError.code != NSURLErrorCancelled,
-              !(nsError.domain == "WebKitErrorDomain" && nsError.code == 102) else { return }
+              !(nsError.domain == "WebKitErrorDomain" && nsError.code == Self.frameLoadInterruptedByPolicyChange) else { return }
         self.error = error.localizedDescription
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
@@ -210,7 +213,7 @@ struct AuthPopup: Identifiable {
             }
             decisionHandler(.allow)
         case .openExternally:
-            NSWorkspace.shared.open(url)
+            NavigationPolicy.openExternally(url)
             decisionHandler(.cancel)
             if isPopup { webViewDidClose(webView) }
         case .cancel:
@@ -262,14 +265,19 @@ struct AuthPopup: Identifiable {
         panel.begin { result in completionHandler(result == .OK ? panel.urls : nil) }
     }
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
-        let alert = NSAlert(); alert.messageText = message; alert.runModal(); completionHandler()
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.runModal()
+        completionHandler()
     }
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         completionHandler(okCancelAlert(message).runModal() == .alertFirstButtonReturn)
     }
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
         let alert = okCancelAlert(prompt)
-        let field = NSTextField(string: defaultText ?? ""); field.frame = NSRect(x: 0, y: 0, width: 300, height: 24); alert.accessoryView = field
+        let field = NSTextField(string: defaultText ?? "")
+        field.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
+        alert.accessoryView = field
         completionHandler(alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil)
     }
     private func okCancelAlert(_ message: String) -> NSAlert {

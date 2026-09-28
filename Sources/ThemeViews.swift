@@ -1,14 +1,10 @@
 import SwiftUI
 
 extension PotionTheme {
-    /// Stands in for Notion's own styling wherever themes are listed.
-    static let original = PotionTheme(id: ThemeStore.originalID, name: "Notion Default",
-                                      fonts: ThemeFonts(heading: "", body: ""),
-                                      colors: ThemeColors(background: "FFFFFF", surface: "F1F1EF", title: "37352F",
-                                                          heading: "37352F", text: "37352F", accent: "2383E2"))
-    var isOriginal: Bool { id == ThemeStore.originalID }
-    var fontSummary: String { isOriginal ? "System fonts" : fonts.name }
-    func headingFont(size: CGFloat) -> Font { isOriginal ? .system(size: size, weight: .semibold) : .custom(fonts.heading, size: size) }
+    var fontSummary: String { isNotionDefault ? "System fonts" : fonts.name }
+    func headingFont(size: CGFloat) -> Font {
+        isNotionDefault ? .system(size: size, weight: .semibold) : .custom(fonts.heading, size: size)
+    }
 }
 
 extension ThemeColors {

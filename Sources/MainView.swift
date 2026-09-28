@@ -54,7 +54,9 @@ private struct WindowHeader: View {
     let workspace: Workspace
     @ObservedObject var appearance: AppearanceState
 
-    private let buttonX = ThemeInjection.sidebarButtonX
+    /// The stretch of the row Notion's collapse button takes, starting just before `sidebarButtonX`.
+    private let collapseButtonX = ThemeInjection.sidebarButtonX - 2
+    private let collapseButtonWidth: CGFloat = 32
     /// Notion's inbox and new-page buttons, with the row's end padding, at the right of its sidebar row.
     private let sidebarTrailingWidth: CGFloat = 72
 
@@ -63,9 +65,9 @@ private struct WindowHeader: View {
         HStack(spacing: 0) {
             if sidebarWidth > 0 {
                 // Empty stretches of Notion's row move the window; its buttons get the clicks.
-                WindowDragArea().frame(width: buttonX - 2)
-                Color.clear.frame(width: 32).allowsHitTesting(false)
-                WindowDragArea().frame(width: max(0, sidebarWidth - buttonX - 30 - sidebarTrailingWidth))
+                WindowDragArea().frame(width: collapseButtonX)
+                Color.clear.frame(width: collapseButtonWidth).allowsHitTesting(false)
+                WindowDragArea().frame(width: max(0, sidebarWidth - collapseButtonX - collapseButtonWidth - sidebarTrailingWidth))
                 Color.clear.frame(width: min(sidebarWidth, sidebarTrailingWidth)).allowsHitTesting(false)
             } else {
                 HStack(spacing: 8) {
@@ -73,7 +75,7 @@ private struct WindowHeader: View {
                     HeaderIconButton(symbol: "tray", help: "Inbox", badge: workspace.inboxCount) { workspace.openInbox() }
                     HeaderIconButton(symbol: "square.and.pencil", help: "New page") { workspace.newPage() }
                 }
-                .padding(.leading, buttonX)
+                .padding(.leading, ThemeInjection.sidebarButtonX)
                 .frame(maxHeight: .infinity)
                 .background(WindowDragArea())
                 .overlay(alignment: .bottom) { HeaderRule(axis: .horizontal) }
@@ -95,7 +97,7 @@ private struct WindowHeader: View {
             HStack(spacing: 2) {
                 HeaderIconButton(symbol: "arrow.clockwise", help: "Reload this page (⌘R)") { workspace.reload() }
                 HeaderIconButton(symbol: "safari", help: "Open this page in your browser", isEnabled: workspace.canOpenInBrowser) { workspace.openInBrowser() }
-                HeaderIconButton(symbol: "slider.horizontal.3", help: "Show or hide themes (⌃⌘I)", isOn: appearance.isShown) { appearance.toggle() }
+                HeaderIconButton(symbol: "slider.horizontal.3", help: "Show or hide Appearance (⌃⌘I)", isOn: appearance.isShown) { appearance.toggle() }
             }
             .padding(.horizontal, 8)
         }
@@ -136,10 +138,12 @@ private struct WindowDragArea: View {
 /// Notion-style tabs: full-height cells divided by hairlines, a close button on hover, then a “+”.
 private struct TabStrip: View {
     @ObservedObject var tabs: BrowserTabs
+    /// Room the tabs leave for the “+” button after them.
+    private let newTabButtonWidth: CGFloat = 44
 
     var body: some View {
         GeometryReader { proxy in
-            let tabWidth = ((proxy.size.width - 44) / CGFloat(tabs.tabs.count)).clamped(to: 72...170)
+            let tabWidth = ((proxy.size.width - newTabButtonWidth) / CGFloat(tabs.tabs.count)).clamped(to: 72...170)
             HStack(spacing: 0) {
                 ForEach(tabs.tabs) { tab in
                     TabItem(workspace: tab, isSelected: tab === tabs.current, tabs: tabs)
@@ -247,8 +251,7 @@ private struct AppearancePanel: View {
 
     var body: some View {
         if let edit = appearance.edit {
-            // Setting only while the edit lasts, so a control finishing after Cancel can't bring it back.
-            ThemeEditor(edit: Binding(get: { appearance.edit ?? edit }, set: { if appearance.edit != nil { appearance.edit = $0 } }),
+            ThemeEditor(edit: Binding(get: { appearance.edit ?? edit }, set: appearance.updateEdit),
                         store: store, appearance: appearance)
                 .id(edit.original.id)
         } else {
@@ -270,10 +273,10 @@ private struct AppearancePanel: View {
                 }
                 ForEach(Array(PotionTheme.appearanceGroups.enumerated()), id: \.offset) { index, group in
                     Text(group.title).font(.headline).padding(.top, index == 0 ? 20 : 28)
-                    // Notion's own look leads the light themes.
-                    grid((index == 0 ? [PotionTheme.original] : []) + group.themes) { theme in
-                        if !theme.isOriginal {
-                            Button("Customize…") { edit(theme) }
+                    // Notion Default leads the light themes.
+                    grid((index == 0 ? [PotionTheme.notionDefault] : []) + group.themes) { theme in
+                        if !theme.isNotionDefault {
+                            Button("Customize…") { openEditor(theme) }
                         }
                     }
                     .padding(.top, 12)
@@ -281,7 +284,7 @@ private struct AppearancePanel: View {
                 if !store.customs.isEmpty {
                     Text("My Themes").font(.headline).padding(.top, 28)
                     grid(store.customs) { theme in
-                        Button("Edit…") { edit(theme) }
+                        Button("Edit…") { openEditor(theme) }
                         Button("Duplicate") { appearance.newTheme(from: theme) }
                         Divider()
                         Button("Delete", role: .destructive) { withAnimation { store.delete(theme) } }
@@ -305,7 +308,7 @@ private struct AppearancePanel: View {
         }
     }
 
-    private func edit(_ theme: PotionTheme) {
+    private func openEditor(_ theme: PotionTheme) {
         store.select(theme)
         appearance.customize(theme)
     }
@@ -317,7 +320,7 @@ private struct AppearancePanel: View {
                     withAnimation(.snappy) { store.activate(theme.id) }
                     appearance.themeChosen()
                 } open: {
-                    if !theme.isOriginal { edit(theme) }
+                    if !theme.isNotionDefault { openEditor(theme) }
                 }
                 .contextMenu { menu(theme) }
             }

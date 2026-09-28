@@ -8,8 +8,8 @@ struct PotionApp: App {
         FontCatalog.register()
         // Tabs live in Potion's header, as in Notion's app, rather than in the system tab bar.
         NSWindow.allowsAutomaticWindowTabbing = false
-        // Potion restores its own tabs. System window restoration is off so a saved window from an older
-        // version can never stop the window from opening at launch.
+        // Potion restores its own tabs, so system window restoration is off and a stale saved window can't stop the
+        // window from opening at launch.
         UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
     }
 
@@ -38,8 +38,6 @@ private struct PotionCommands: Commands {
     @FocusedObject private var appearance: AppearanceState?
     @Environment(\.openWindow) private var openWindow
 
-    private var inWorkspace: Bool { !flow.isOnboarding }
-
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
             Button("About Potion") {
@@ -50,7 +48,7 @@ private struct PotionCommands: Commands {
         }
         CommandGroup(after: .appSettings) {
             Button("Sign Out of Notion…") { flow.requestSignOut() }
-                .disabled(!inWorkspace)
+                .disabled(flow.isOnboarding)
         }
         CommandGroup(replacing: .newItem) {
             Button("New Tab") { tabs?.newTab() }
@@ -58,7 +56,7 @@ private struct PotionCommands: Commands {
                 .disabled(tabs == nil)
             Button("New Window") { openWindow(id: "workspace") }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
-                .disabled(!inWorkspace)
+                .disabled(flow.isOnboarding)
             Divider()
             // Listed before the system's Close item, so ⌘W closes a tab first and the window with its last tab.
             Button("Close Tab") { if let tabs { tabs.close(tabs.current) } }
@@ -68,10 +66,10 @@ private struct PotionCommands: Commands {
         CommandGroup(before: .toolbar) {
             Button("Toggle Notion Sidebar") { workspace?.toggleSidebar() }
                 .keyboardShortcut("\\")
-                .disabled(!inWorkspace || workspace == nil)
+                .disabled(flow.isOnboarding || workspace == nil)
             Button(appearance?.isShown == true ? "Hide Appearance" : "Show Appearance") { appearance?.toggle() }
-            .keyboardShortcut("i", modifiers: [.command, .control])
-            .disabled(appearance == nil)
+                .keyboardShortcut("i", modifiers: [.command, .control])
+                .disabled(appearance == nil)
             Divider()
             Button("Reload Page") { workspace?.reload() }
                 .keyboardShortcut("r")

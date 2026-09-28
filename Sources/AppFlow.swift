@@ -22,7 +22,7 @@ import SwiftUI
     func signInChanged(_ signedIn: Bool) {
         if signedIn && stage == .signIn { completeOnboarding() }
     }
-    func completeOnboarding() {
+    private func completeOnboarding() {
         defaults.set(true, forKey: Self.completedKey)
         go(to: .ready)
     }
@@ -111,6 +111,10 @@ struct ThemeEdit: Equatable {
         self.edit = nil
     }
     func cancelEdit() { edit = nil }
+    /// Takes the editor's changes only while the edit lasts, so a control finishing after Cancel can't bring it back.
+    func updateEdit(_ edit: ThemeEdit) {
+        if self.edit != nil { self.edit = edit }
+    }
     /// Choosing a theme other than the one being edited, from the Theme menu or Settings, abandons the edit.
     func activeThemeChanged(to id: String) {
         if let edit, edit.baseID != id { self.edit = nil }

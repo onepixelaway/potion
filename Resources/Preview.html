@@ -1,9 +1,233 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your quiet corner · Potion</title>
-<style>
-:root { --potion-bg:#f8f5ef; --potion-surface:#eeeae2; --potion-text:#353a32; --potion-accent:#65754f; }
-*{box-sizing:border-box}body{margin:0;color:var(--potion-text);background:var(--potion-bg)}.crumb{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 34px;font:12px -apple-system,sans-serif;border-bottom:1px solid color-mix(in srgb,var(--potion-text) 9%,transparent)}.crumb span{opacity:.55}.cover{height:172px;position:relative;overflow:hidden;background:var(--potion-surface);margin:22px 26px 0;border-radius:8px}.cover svg{width:100%;height:100%;color:var(--potion-accent)}.cover-label{position:absolute;top:24px;left:28px;letter-spacing:2.8px;font:10px -apple-system,sans-serif;opacity:.6}.page{max-width:760px;margin:0 auto;padding:0 58px 65px}.sprig{font-size:35px;margin-top:-29px;position:relative;width:62px;height:62px;background:var(--potion-bg);border:5px solid var(--potion-bg);border-radius:16px;display:grid;place-items:center}.eyebrow{font:10px -apple-system,sans-serif;letter-spacing:2px;color:var(--potion-accent);margin-top:23px;font-weight:600}h1{font-size:42px;line-height:1.17;letter-spacing:-1.3px;font-weight:500;margin:15px 0}p{margin:0 0 20px}.intro{opacity:.66;max-width:560px}.callout{display:flex;gap:14px;padding:18px 20px;border-radius:7px;background:var(--potion-surface);font-size:.9em;margin:26px 0 31px}.callout strong{font-weight:600}h2{font-size:25px;font-weight:500;letter-spacing:-.5px;margin:0 0 14px}.columns{display:grid;grid-template-columns:1.12fr 1fr;gap:36px}.check{display:flex;align-items:center;gap:11px;margin:10px 0;font-size:.9em}.check input{accent-color:var(--potion-accent);width:15px;height:15px}.check:has(input:checked) span{text-decoration:line-through;opacity:.45}.note{border-left:2px solid var(--potion-accent);padding-left:18px;font-size:.9em}.note small{display:block;margin-top:12px;font:11px -apple-system,sans-serif;opacity:.5}.divider{border:0;border-top:1px solid color-mix(in srgb,var(--potion-text) 13%,transparent);margin:32px 0 20px}.footer{display:flex;justify-content:space-between;font:11px -apple-system,sans-serif;opacity:.5}.tag{display:inline-block;font:10px -apple-system,sans-serif;color:var(--potion-accent);padding:5px 8px;border:1px solid color-mix(in srgb,var(--potion-accent) 25%,transparent);border-radius:4px;margin-bottom:13px}@media(max-width:650px){.page{padding:0 30px 40px}.columns{grid-template-columns:1fr;gap:24px}h1{font-size:34px}}
-</style></head><body class="potion-preview">
-<div class="crumb"><div>⌂ &nbsp; Personal &nbsp; <span>/</span> &nbsp; Your quiet corner</div><span>Theme preview &nbsp; ✧</span></div>
-<div class="cover"><div class="cover-label">A PLACE FOR POSSIBILITY</div><svg viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true"><circle cx="765" cy="90" r="115" fill="currentColor" opacity=".07"/><circle cx="765" cy="90" r="77" stroke="currentColor" opacity=".18"/><path d="M0 210 Q210 15 430 190 T1000 110 M0 230 Q250 25 490 205 T1040 130 M0 245 Q230 70 480 225 T1040 160" stroke="currentColor" opacity=".25"/><g stroke="currentColor" stroke-width="2" opacity=".55"><path d="M685 230Q720 120 822 35"/><path d="M733 135Q681 102 690 73Q735 78 733 135Z M753 111Q746 58 772 40Q797 77 753 111Z M775 87Q817 97 843 62Q806 55 775 87Z M713 169Q758 180 787 144Q745 131 713 169Z" fill="currentColor" fill-opacity=".09"/></g></svg></div>
-<main class="page"><div class="sprig">✺</div><div class="eyebrow">MAKE YOURSELF AT HOME</div><h1>Your quiet corner.</h1><p class="intro">A little space to collect your thoughts, follow your curiosity, and make something that feels like you.</p><div class="callout"><span>☀</span><div><strong>Good things start with a little space.</strong><br>Choose a theme. Find your rhythm. Make it yours.</div></div><div class="columns"><section><span class="tag">THE EVERYDAY</span><h2>A slower kind of productivity</h2><label class="check"><input type="checkbox" checked><span>Make a little room for inspiration</span></label><label class="check"><input type="checkbox"><span>Write down one good idea</span></label><label class="check"><input type="checkbox"><span>Start before it feels perfect</span></label></section><section><span class="tag">A THOUGHT TO KEEP</span><h2>Leave room to wander.</h2><div class="note">You don’t need to have it all figured out to take the next small step.<small>A NOTE TO YOURSELF</small></div></section></div><hr class="divider"><div class="footer"><span>A sample page, made for trying things on.</span><span>Made yours with Potion ♧</span></div></main></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Your quiet corner · Potion</title>
+    <style>
+      :root {
+        --potion-bg: #f8f5ef;
+        --potion-surface: #eeeae2;
+        --potion-text: #353a32;
+        --potion-accent: #65754f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: var(--potion-text);
+        background: var(--potion-bg);
+      }
+      .crumb {
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 34px;
+        font:
+          12px -apple-system,
+          sans-serif;
+        border-bottom: 1px solid color-mix(in srgb, var(--potion-text) 9%, transparent);
+      }
+      .crumb span {
+        opacity: 0.55;
+      }
+      .cover {
+        height: 172px;
+        position: relative;
+        overflow: hidden;
+        background: var(--potion-surface);
+        margin: 22px 26px 0;
+        border-radius: 8px;
+      }
+      .cover svg {
+        width: 100%;
+        height: 100%;
+        color: var(--potion-accent);
+      }
+      .cover-label {
+        position: absolute;
+        top: 24px;
+        left: 28px;
+        letter-spacing: 2.8px;
+        font:
+          10px -apple-system,
+          sans-serif;
+        opacity: 0.6;
+      }
+      .page {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 58px 65px;
+      }
+      .sprig {
+        font-size: 35px;
+        margin-top: -29px;
+        position: relative;
+        width: 62px;
+        height: 62px;
+        background: var(--potion-bg);
+        border: 5px solid var(--potion-bg);
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+      }
+      .eyebrow {
+        font:
+          10px -apple-system,
+          sans-serif;
+        letter-spacing: 2px;
+        color: var(--potion-accent);
+        margin-top: 23px;
+        font-weight: 600;
+      }
+      h1 {
+        font-size: 42px;
+        line-height: 1.17;
+        letter-spacing: -1.3px;
+        font-weight: 500;
+        margin: 15px 0;
+      }
+      p {
+        margin: 0 0 20px;
+      }
+      .intro {
+        opacity: 0.66;
+        max-width: 560px;
+      }
+      .callout {
+        display: flex;
+        gap: 14px;
+        padding: 18px 20px;
+        border-radius: 7px;
+        background: var(--potion-surface);
+        font-size: 0.9em;
+        margin: 26px 0 31px;
+      }
+      .callout strong {
+        font-weight: 600;
+      }
+      h2 {
+        font-size: 25px;
+        font-weight: 500;
+        letter-spacing: -0.5px;
+        margin: 0 0 14px;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: 1.12fr 1fr;
+        gap: 36px;
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin: 10px 0;
+        font-size: 0.9em;
+      }
+      .check input {
+        accent-color: var(--potion-accent);
+        width: 15px;
+        height: 15px;
+      }
+      .check:has(input:checked) span {
+        text-decoration: line-through;
+        opacity: 0.45;
+      }
+      .note {
+        border-left: 2px solid var(--potion-accent);
+        padding-left: 18px;
+        font-size: 0.9em;
+      }
+      .note small {
+        display: block;
+        margin-top: 12px;
+        font:
+          11px -apple-system,
+          sans-serif;
+        opacity: 0.5;
+      }
+      .divider {
+        border: 0;
+        border-top: 1px solid color-mix(in srgb, var(--potion-text) 13%, transparent);
+        margin: 32px 0 20px;
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        font:
+          11px -apple-system,
+          sans-serif;
+        opacity: 0.5;
+      }
+      .tag {
+        display: inline-block;
+        font:
+          10px -apple-system,
+          sans-serif;
+        color: var(--potion-accent);
+        padding: 5px 8px;
+        border: 1px solid color-mix(in srgb, var(--potion-accent) 25%, transparent);
+        border-radius: 4px;
+        margin-bottom: 13px;
+      }
+      @media (max-width: 650px) {
+        .page {
+          padding: 0 30px 40px;
+        }
+        .columns {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        h1 {
+          font-size: 34px;
+        }
+      }
+    </style>
+  </head>
+  <body class="potion-preview">
+    <div class="crumb">
+      <div>⌂ &nbsp; Personal &nbsp; <span>/</span> &nbsp; Your quiet corner</div>
+      <span>Theme preview &nbsp; ✧</span>
+    </div>
+    <div class="cover">
+      <div class="cover-label">A PLACE FOR POSSIBILITY</div>
+      <svg viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true">
+        <circle cx="765" cy="90" r="115" fill="currentColor" opacity=".07"/>
+        <circle cx="765" cy="90" r="77" stroke="currentColor" opacity=".18"/>
+        <path d="M0 210 Q210 15 430 190 T1000 110 M0 230 Q250 25 490 205 T1040 130 M0 245 Q230 70 480 225 T1040 160" stroke="currentColor" opacity=".25"/>
+        <g stroke="currentColor" stroke-width="2" opacity=".55">
+          <path d="M685 230Q720 120 822 35"/>
+          <path d="M733 135Q681 102 690 73Q735 78 733 135Z M753 111Q746 58 772 40Q797 77 753 111Z M775 87Q817 97 843 62Q806 55 775 87Z M713 169Q758 180 787 144Q745 131 713 169Z" fill="currentColor" fill-opacity=".09"/>
+        </g>
+      </svg>
+    </div>
+    <main class="page">
+      <div class="sprig">✺</div>
+      <div class="eyebrow">MAKE YOURSELF AT HOME</div>
+      <h1>Your quiet corner.</h1>
+      <p class="intro">A little space to collect your thoughts, follow your curiosity, and make something that feels like you.</p>
+      <div class="callout">
+        <span>☀</span>
+        <div><strong>Good things start with a little space.</strong><br>Choose a theme. Find your rhythm. Make it yours.</div>
+      </div>
+      <div class="columns">
+        <section>
+          <span class="tag">THE EVERYDAY</span>
+          <h2>A slower kind of productivity</h2>
+          <label class="check"><input type="checkbox" checked><span>Make a little room for inspiration</span></label>
+          <label class="check"><input type="checkbox"><span>Write down one good idea</span></label>
+          <label class="check"><input type="checkbox"><span>Start before it feels perfect</span></label>
+        </section>
+        <section>
+          <span class="tag">A THOUGHT TO KEEP</span>
+          <h2>Leave room to wander.</h2>
+          <div class="note">You don’t need to have it all figured out to take the next small step.<small>A NOTE TO YOURSELF</small></div>
+        </section>
+      </div>
+      <hr class="divider">
+      <div class="footer"><span>A sample page, made for trying things on.</span><span>Made yours with Potion ♧</span></div>
+    </main>
+  </body>
+</html>

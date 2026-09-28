@@ -28,11 +28,12 @@ final class PotionTests: XCTestCase {
             }
             return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
         }
-        let (a, b) = (luminance(first), luminance(second))
+        let a = luminance(first)
+        let b = luminance(second)
         return (max(a, b) + 0.05) / (min(a, b) + 0.05)
     }
     func testPaletteValidationRejectsCSSAndClampsType() {
-        var theme = PotionTheme.presets[0]
+        var theme = preset("paper")
         theme.colors.background = "red; } body {display:none}"
         theme.colors.accent = "#abc123"
         theme.colors.title = "#12345"
@@ -102,7 +103,7 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(flow.stage, .signIn)
         XCTAssertEqual(AppFlow(defaults: defaults).stage, .welcome)
     }
-    @MainActor func testAppearancePanelFirstChoiceAndEditing() {
+    @MainActor func testAppearancePanelFirstChoiceAndEditing() throws {
         let appearance = AppearanceState()
         XCTAssertFalse(appearance.isShown)
         appearance.beginFirstThemeChoice()
@@ -120,6 +121,11 @@ final class PotionTests: XCTestCase {
         appearance.customize(preset("clay"))
         appearance.isShown = false
         XCTAssertNil(appearance.preview, "Closing the panel abandons an edit")
+        appearance.customize(preset("clay"))
+        let draft = try XCTUnwrap(appearance.edit)
+        appearance.cancelEdit()
+        appearance.updateEdit(draft)
+        XCTAssertNil(appearance.edit, "A control finishing after Cancel doesn't bring the edit back")
         let store = ThemeStore(defaults: makeDefaults())
         appearance.customize(preset("clay"))
         appearance.edit?.draft.colors.accent = "112233"
@@ -132,12 +138,11 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(NavigationPolicy.pageTitle("  "), "Notion")
         XCTAssertEqual(NavigationPolicy.withoutQuery(URL(string: "https://app.notion.com/Page-1?pvs=4#abc")!)?.absoluteString, "https://app.notion.com/Page-1")
     }
-    @MainActor func testOriginalNotionSelection() {
-        let defaults = makeDefaults()
-        let store = ThemeStore(defaults: defaults)
-        store.activate(ThemeStore.originalID)
+    @MainActor func testNotionDefaultSelection() {
+        let store = ThemeStore(defaults: makeDefaults())
+        store.activate(PotionTheme.notionDefault.id)
         XCTAssertFalse(store.enabled)
-        XCTAssertEqual(store.activeID, ThemeStore.originalID)
+        XCTAssertEqual(store.activeID, PotionTheme.notionDefault.id)
         store.activate("midnight")
         XCTAssertTrue(store.enabled)
         XCTAssertEqual(store.selected.name, "Midnight")
@@ -145,7 +150,7 @@ final class PotionTests: XCTestCase {
     @MainActor func testSaveEditDeleteAndRestoreTheme() {
         let defaults = makeDefaults()
         let store = ThemeStore(defaults: defaults)
-        var theme = PotionTheme.presets[2]
+        var theme = preset("lavender")
         theme.name = "My lavender"
         store.save(theme)
         XCTAssertTrue(store.selected.isCustom)
@@ -212,7 +217,9 @@ final class PotionTests: XCTestCase {
         XCTAssertEqual(fonts, "DM Sans,Lora", "Pages load only the theme's own fonts")
         let heading = try await style("fontFamily", "h1")
         XCTAssertTrue(heading?.contains("Lora") == true)
-        let title = try await color("h1"), subheading = try await color("h2"), text = try await color(".intro")
+        let title = try await color("h1")
+        let subheading = try await color("h2")
+        let text = try await color(".intro")
         XCTAssertEqual(title, "rgb(75, 103, 42)")
         XCTAssertEqual(subheading, "rgb(154, 74, 44)")
         XCTAssertEqual(text, "rgb(58, 62, 54)")
@@ -278,7 +285,10 @@ final class PotionTests: XCTestCase {
             <div class="notion-frame"><div id="page" class="notion-scroller vertical" style="height:100px;overflow:auto"><div style="height:500px"></div></div>
               <div id="table" class="notion-scroller horizontal" style="width:100px;height:100px;overflow:auto"><div style="width:500px;height:500px"></div></div></div>
             <div class="notion-sidebar"><div id="sidebar" class="notion-scroller vertical" style="height:100px;overflow:auto"><div style="height:500px"></div></div></div>`);
-          ['page', 'sidebar', 'table'].map(id => { const el = document.getElementById(id); return el.offsetWidth - el.clientWidth; });
+          ['page', 'sidebar', 'table'].map(id => {
+            const el = document.getElementById(id);
+            return el.offsetWidth - el.clientWidth;
+          });
         """, in: workspace) as? [Int]
         XCTAssertEqual(widths, [0, 0, 10], "Page and sidebar scroll bars are hidden; a wide table's stays")
         workspace.usesWindowLayout = false

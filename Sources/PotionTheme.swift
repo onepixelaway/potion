@@ -65,6 +65,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
                ThemeColors("F6F3F9", "E9E3F1", "5A3D9A", "805A0E", "3E3750", "5A3D9A")),
         preset("clay", "Clay", "DM Serif Display", "DM Sans",
                ThemeColors("FBF4EE", "F1E3D8", "A0462A", "2B6966", "47352E", "9A4424")),
+        // Studio keeps the id "mono" so saved selections still load.
         preset("mono", "Studio", "Space Grotesk", "Manrope",
                ThemeColors("F6F6F4", "E9E9E6", "33448A", "9A552A", "343735", "33448A")),
         preset("linen", "Linen", "Marcellus", "DM Sans",
@@ -113,6 +114,12 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     /// Every preset's font pairing, in alphabetical order.
     static let fontSets: [ThemeFonts] = Array(Set(presets.map(\.fonts))).sorted { $0.name < $1.name }
 
+    /// Stands in for Notion's own styling wherever themes are listed.
+    static let notionDefault = PotionTheme(id: "original", name: "Notion Default",
+                                           fonts: ThemeFonts(heading: "", body: ""),
+                                           colors: ThemeColors(background: "FFFFFF", surface: "F1F1EF", title: "37352F",
+                                                               heading: "37352F", text: "37352F", accent: "2383E2"))
+
     static func preset(id: String) -> PotionTheme? { presets.first { $0.id == id } }
     /// The theme Potion starts with, and falls back to.
     static var standard: PotionTheme { presets[0] }
@@ -120,6 +127,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     static let lineHeightRange: ClosedRange<Double> = 1.3...2
 
     var isDark: Bool { colors.isDark }
+    var isNotionDefault: Bool { id == Self.notionDefault.id }
     var hasName: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     /// A new custom theme mixed from this one.
     func customCopy() -> PotionTheme {
@@ -158,9 +166,13 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     @Published var customs: [PotionTheme] { didSet { persist() } }
     @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: Self.enabledKey) } }
     private let defaults: UserDefaults
+    // Both keys keep their existing names so saved themes and settings still load.
     private static let archiveKey = "potion.themes.v2"
     private static let enabledKey = "themeEnabled"
-    private struct Archive: Codable { var selected: PotionTheme; var customs: [PotionTheme] }
+    private struct Archive: Codable {
+        var selected: PotionTheme
+        var customs: [PotionTheme]
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -169,20 +181,21 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         customs = archive?.customs.map(\.validated) ?? []
         enabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
     }
-    /// Selection identifier for Notion's own styling, which sits alongside the themes in pickers.
-    nonisolated static let originalID = "original"
     var all: [PotionTheme] { PotionTheme.presets + customs }
-    /// Every theme a picker offers, Notion's own styling first.
-    var choices: [PotionTheme] { [PotionTheme.original] + all }
+    /// Every theme a picker offers, Notion Default first.
+    var choices: [PotionTheme] { [PotionTheme.notionDefault] + all }
     var activeID: String {
-        get { enabled ? selected.id : Self.originalID }
+        get { enabled ? selected.id : PotionTheme.notionDefault.id }
         set { activate(newValue) }
     }
     func activate(_ id: String) {
-        if id == Self.originalID { enabled = false }
+        if id == PotionTheme.notionDefault.id { enabled = false }
         else if let theme = all.first(where: { $0.id == id }) { select(theme) }
     }
-    func select(_ theme: PotionTheme) { selected = theme; enabled = true }
+    func select(_ theme: PotionTheme) {
+        selected = theme
+        enabled = true
+    }
     func save(_ theme: PotionTheme) {
         var saved = theme.validated
         if !saved.isCustom { saved.id = UUID().uuidString }

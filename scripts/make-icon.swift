@@ -14,7 +14,9 @@ for size in [16, 32, 64, 128, 256, 512, 1024] {
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
     NSGraphicsContext.current!.imageInterpolation = .high
     let scale = CGFloat(size) / 1024
-    let transform = NSAffineTransform(); transform.scale(by: scale); transform.concat()
+    let transform = NSAffineTransform()
+    transform.scale(by: scale)
+    transform.concat()
     // Pre-Tahoe fallback (macOS 26 uses Resources/AppIcon.icon): white tile on Apple's 824pt grid, with a soft drop shadow.
     let tile = NSBezierPath(roundedRect: NSRect(x: 100, y: 100, width: 824, height: 824), xRadius: 185, yRadius: 185)
     NSGraphicsContext.saveGraphicsState()
@@ -23,15 +25,21 @@ for size in [16, 32, 64, 128, 256, 512, 1024] {
     shadow.shadowBlurRadius = 20 * scale
     shadow.shadowOffset = NSSize(width: 0, height: -8 * scale)
     shadow.set()
-    NSColor.white.setFill(); tile.fill()
+    NSColor.white.setFill()
+    tile.fill()
     NSGraphicsContext.restoreGraphicsState()
-    NSColor.black.withAlphaComponent(0.08).setStroke(); tile.lineWidth = 2; tile.stroke()
+    NSColor.black.withAlphaComponent(0.08).setStroke()
+    tile.lineWidth = 2
+    tile.stroke()
     let logo: CGFloat = 620
-    source.draw(in: NSRect(x: 512 - logo / 2, y: 512 - logo / 2, width: logo, height: logo), from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: false, hints: nil)
+    source.draw(in: NSRect(x: 512 - logo / 2, y: 512 - logo / 2, width: logo, height: logo), from: .zero,
+                operation: .sourceOver, fraction: 1, respectFlipped: false, hints: nil)
     NSGraphicsContext.restoreGraphicsState()
     let data = rep.representation(using: .png, properties: [:])!
     let names = [size / 2, size].filter(pointSizes.contains).map { points in
         "icon_\(points)x\(points)\(points == size ? "" : "@2x").png"
     }
-    for name in names { try data.write(to: root.appendingPathComponent(name)) }
+    for name in names {
+        try data.write(to: root.appendingPathComponent(name))
+    }
 }

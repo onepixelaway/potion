@@ -20,7 +20,10 @@ extension FocusedValues {
     private var savedSnapshot: Data?
 
     /// The open pages and selected tab, saved so the most recently changed window's tabs reopen at the next launch.
-    private struct Snapshot: Codable { var urls: [URL?]; var selected: Int }
+    private struct Snapshot: Codable {
+        var urls: [URL?]
+        var selected: Int
+    }
     private static let snapshotKey = "potion.tabs"
     private let defaults: UserDefaults
 
@@ -35,7 +38,6 @@ extension FocusedValues {
     func newTab(_ url: URL? = nil, select: Bool = true) {
         let tab = Workspace()
         configure(tab)
-        tab.apply(theme)
         tabs.insert(tab, at: (currentIndex ?? tabs.count - 1) + 1)
         tab.open(url ?? Workspace.homeURL)
         if select { current = tab }
@@ -74,7 +76,7 @@ extension FocusedValues {
     /// Reopens the saved tabs, or the workspace when there is nothing to restore.
     func restore() {
         guard let data = defaults.data(forKey: Self.snapshotKey), let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data),
-              !snapshot.urls.isEmpty else { current.open(); return }
+              !snapshot.urls.isEmpty else { current.openLogin(); return }
         current.open(snapshot.urls[0])
         for url in snapshot.urls.dropFirst() { newTab(url, select: false) }
         select(tabs[snapshot.selected.clamped(to: 0...(tabs.count - 1))])
@@ -82,6 +84,7 @@ extension FocusedValues {
 
     private func configure(_ tab: Workspace) {
         tab.onOpenTab = { [weak self] url in self?.newTab(url, select: false) }
+        tab.apply(theme)
         tab.usesWindowLayout = usesWindowLayout
         tab.onPageChange = { [weak self] in self?.persist() }
     }
