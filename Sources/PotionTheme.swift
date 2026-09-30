@@ -165,7 +165,10 @@ struct PotionTheme: Codable, Identifiable, Equatable {
     @Published var selected: PotionTheme { didSet { persist() } }
     @Published var customs: [PotionTheme] { didSet { persist() } }
     @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: Self.enabledKey) } }
+    /// Whether themes give Notion's sidebar their body font too. Off, the sidebar keeps Notion's own font.
+    @Published var changesSidebarFont: Bool { didSet { defaults.set(changesSidebarFont, forKey: Self.sidebarFontKey) } }
     private let defaults: UserDefaults
+    private static let sidebarFontKey = "potion.changesSidebarFont"
     // Both keys keep their existing names so saved themes and settings still load.
     private static let archiveKey = "potion.themes.v2"
     private static let enabledKey = "themeEnabled"
@@ -180,6 +183,7 @@ struct PotionTheme: Codable, Identifiable, Equatable {
         selected = archive?.selected.latest.validated ?? .standard
         customs = archive?.customs.map(\.validated) ?? []
         enabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
+        changesSidebarFont = defaults.bool(forKey: Self.sidebarFontKey)
     }
     var all: [PotionTheme] { PotionTheme.presets + customs }
     /// Every theme a picker offers, Notion Default first.
