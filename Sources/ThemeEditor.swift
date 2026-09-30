@@ -79,9 +79,9 @@ struct ThemeEditor: View {
                 Button("Cancel") { appearance.cancelEdit() }
                     .keyboardShortcut(.cancelAction)
                 Button("Save") { appearance.saveEdit(to: store) }
-                .prominentStyle()
-                .keyboardShortcut(.defaultAction)
-                .disabled(!draft.hasName)
+                    .prominentStyle()
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!draft.hasName)
             }
             .padding(16)
         }
@@ -110,8 +110,8 @@ struct ThemeEditor: View {
     private var sample: some View {
         let colors = draft.colors
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Room for your next idea").font(.custom(draft.fonts.heading, size: 24)).foregroundStyle(Color(hex: colors.title))
-            Text("A softer kind of focus").font(.custom(draft.fonts.heading, size: 17)).foregroundStyle(Color(hex: colors.heading))
+            Text("Room for your next idea").font(draft.headingFont(size: 24)).foregroundStyle(Color(hex: colors.title))
+            Text("A softer kind of focus").font(draft.headingFont(size: 17)).foregroundStyle(Color(hex: colors.heading))
             Text("A favorite font. A softer shade. Sometimes a small change makes all the difference.")
                 .font(.custom(draft.fonts.body, size: draft.fontSize))
                 .lineSpacing((draft.lineHeight - 1) * draft.fontSize / 2)

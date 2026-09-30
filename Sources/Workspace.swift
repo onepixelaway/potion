@@ -29,8 +29,9 @@ struct AuthPopup: Identifiable {
     private(set) var sidebarWidth: CGFloat = 0
     /// Unread notifications in Notion's inbox.
     private(set) var inboxCount = 0
-    /// Whether Notion's page is in its dark mode, or nil before a Notion page reports it.
-    private(set) var isPageDark: Bool?
+    /// Notion's own appearance setting when it's Light or Dark, or nil when it follows the system (or before a Notion
+    /// page reports it).
+    private(set) var notionColorScheme: ColorScheme?
     /// What this tab's pages show. Changes reach the open page right away; the user scripts, which carry the style to
     /// later pages and include the large fonts, are reinstalled only when a page loads, so an edit doesn't resend them
     /// on every tick.
@@ -109,14 +110,14 @@ struct AuthPopup: Identifiable {
     }
     func openLogin() { load(Self.loginURL) }
     /// Opens a Notion page, or else the login page, which sends signed-in people on to their workspace.
-    func open(_ url: URL? = nil) { load(url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil } ?? Self.loginURL) }
+    func open(_ url: URL?) { load(url.flatMap { NavigationPolicy.isNotion($0) ? $0 : nil } ?? Self.loginURL) }
     private func load(_ url: URL) {
         error = nil
         webView.load(URLRequest(url: url))
     }
     func reload() {
         error = nil
-        if webView.url == nil { open() } else { webView.reload() }
+        if webView.url == nil { openLogin() } else { webView.reload() }
     }
     func goBack() { webView.goBack() }
     func goForward() { webView.goForward() }
@@ -165,7 +166,11 @@ struct AuthPopup: Identifiable {
               let body = message.body as? [String: Any], let width = body["sidebarWidth"] as? NSNumber else { return }
         update(\.sidebarWidth, CGFloat(width.doubleValue))
         update(\.inboxCount, (body["inboxCount"] as? NSNumber)?.intValue ?? 0)
-        update(\.isPageDark, body["dark"] as? Bool)
+        switch body["notionAppearance"] as? String {
+        case "dark": update(\.notionColorScheme, .dark)
+        case "light": update(\.notionColorScheme, .light)
+        default: update(\.notionColorScheme, nil)
+        }
     }
 
     // MARK: Navigation
@@ -175,10 +180,13 @@ struct AuthPopup: Identifiable {
     }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { handle(error, in: webView) }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { handle(error, in: webView) }
+    /// WebKit's “frame load interrupted by policy change”, reported when this delegate turns a navigation into a
+    /// download or cancels it. Neither is a failure worth showing.
+    private static let frameLoadInterruptedByPolicyChange = 102
     private func handle(_ error: Error, in webView: WKWebView) {
         let nsError = error as NSError
         guard webView === self.webView, nsError.code != NSURLErrorCancelled,
-              !(nsError.domain == "WebKitErrorDomain" && nsError.code == 102) else { return }
+              !(nsError.domain == "WebKitErrorDomain" && nsError.code == Self.frameLoadInterruptedByPolicyChange) else { return }
         self.error = error.localizedDescription
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
@@ -210,7 +218,7 @@ struct AuthPopup: Identifiable {
             }
             decisionHandler(.allow)
         case .openExternally:
-            NSWorkspace.shared.open(url)
+            NavigationPolicy.openExternally(url)
             decisionHandler(.cancel)
             if isPopup { webViewDidClose(webView) }
         case .cancel:
@@ -262,14 +270,19 @@ struct AuthPopup: Identifiable {
         panel.begin { result in completionHandler(result == .OK ? panel.urls : nil) }
     }
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
-        let alert = NSAlert(); alert.messageText = message; alert.runModal(); completionHandler()
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.runModal()
+        completionHandler()
     }
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         completionHandler(okCancelAlert(message).runModal() == .alertFirstButtonReturn)
     }
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
         let alert = okCancelAlert(prompt)
-        let field = NSTextField(string: defaultText ?? ""); field.frame = NSRect(x: 0, y: 0, width: 300, height: 24); alert.accessoryView = field
+        let field = NSTextField(string: defaultText ?? "")
+        field.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
+        alert.accessoryView = field
         completionHandler(alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil)
     }
     private func okCancelAlert(_ message: String) -> NSAlert {

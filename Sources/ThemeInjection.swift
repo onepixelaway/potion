@@ -9,29 +9,10 @@ enum ThemeInjection {
         return String(data: try! encoder.encode(value), encoding: .utf8)!
     }
 
-    /// Runs the rest of an injected script only on Notion's pages and the offline preview.
-    private static let themedPagesOnly = """
-      const domains = \(jsLiteral(NavigationPolicy.notionDomains));
-      if (!(location.protocol === 'file:' || (location.protocol === 'https:' && domains.some(domain => location.hostname === domain || location.hostname.endsWith('.' + domain))))) return;
-    """
-
-    /// Creates or updates one of Potion's style elements, leaving it alone when the CSS is unchanged.
-    private static let putStyle = """
-      const put = (id, css) => {
-        let node = document.getElementById(id);
-        if (!node) { node = document.createElement('style'); node.id = id; (document.head || document.documentElement).appendChild(node); }
-        if (node.textContent !== css) node.textContent = css;
-      };
-    """
-
-    /// Each family's embedded @font-face rule, read and encoded the first time a theme uses it.
-    @MainActor private static var fontFaces: [String: String] = [:]
-    @MainActor private static func fontFace(_ family: String) -> String? {
-        if let rule = fontFaces[family] { return rule }
+    /// A family's @font-face rule, with the font file embedded so pages need no font requests.
+    private static func fontFace(_ family: String) -> String? {
         guard let url = FontCatalog.url(for: family), let data = try? Data(contentsOf: url) else { return nil }
-        let rule = "@font-face { font-family: '\(family)'; src: url(data:font/ttf;base64,\(data.base64EncodedString())) format('truetype'); font-weight: 100 900; font-display: swap; }"
-        fontFaces[family] = rule
-        return rule
+        return "@font-face { font-family: '\(family)'; src: url(data:font/ttf;base64,\(data.base64EncodedString())) format('truetype'); font-weight: 100 900; font-display: swap; }"
     }
     /// The last fonts sent, as a JavaScript literal, shared by every tab since they all show the same theme.
     @MainActor private static var fontsCache: (fonts: ThemeFonts, literal: String)?
@@ -57,30 +38,104 @@ enum ThemeInjection {
         // Title and heading blocks set their own text color, both directly and through Notion's text variable, which
         // also recolors text Notion marks with its default color. Block colors people choose stay as they are.
         return """
-        :root { --potion-bg: #\(c.background); --potion-surface: #\(c.surface); --potion-text: #\(c.text); --potion-accent: #\(c.accent); color-scheme: \(t.isDark ? "dark" : "light"); }
-        :root, .notion-light-theme, .notion-dark-theme, .notion-app-inner {
-          --c-bacPri: #\(c.background) !important; --c-bacSec: #\(c.surface) !important; --c-bacTer: #\(c.surface) !important;
-          --c-bacEle: #\(c.background) !important; --c-popBac: #\(c.background) !important;
-          --c-texPri: #\(c.text) !important; --c-texSec: #\(c.text)B3 !important; --c-texTer: #\(c.text)8C !important;
-          --c-icoPri: #\(c.text) !important; --c-icoSec: #\(c.text)99 !important;
-          --c-borPri: #\(c.text)20 !important; --c-borSec: #\(c.text)14 !important;
-          --c-bluTexAccPri: #\(c.accent) !important; --ca-staHov: #\(c.accent)14 !important;
+        :root {
+          --potion-bg: #\(c.background);
+          --potion-surface: #\(c.surface);
+          --potion-text: #\(c.text);
+          --potion-accent: #\(c.accent);
+          color-scheme: \(t.isDark ? "dark" : "light");
         }
-        body, .notion-app-inner { background: #\(c.background) !important; color: #\(c.text) !important; }
-        \(pageTitle), .potion-preview h1 { --c-texPri: #\(c.title) !important; color: #\(c.title); }
-        \(headingBlocks), .potion-preview h2, .potion-preview h3 { --c-texPri: #\(c.heading) !important; color: #\(c.heading); }
-        .notion-app-inner, .notion-page-content, .potion-preview { font-family: '\(t.fonts.body)', sans-serif !important; }
-        .notion-cursor-listener, .notion-frame, .notion-scroller.vertical, .notion-topbar { background-color: #\(c.background) !important; }
-        .notion-page-content { background-color: transparent !important; }
-        .notion-sidebar-container, .notion-sidebar { background-color: #\(c.surface) !important; }
-        .notion-sidebar-container .notion-scroller.vertical { background-color: transparent !important; }
-        .notion-page-content, .notion-text-block [contenteditable], .notion-bulleted_list-block [contenteditable], .notion-numbered_list-block [contenteditable], .notion-to_do-block [contenteditable] { font-size: \(t.fontSize)px !important; line-height: \(t.lineHeight) !important; }
-        :is(\(pageTitle), \(headingBlocks)) [contenteditable], .potion-preview h1, .potion-preview h2, .potion-preview h3 { font-family: '\(t.fonts.heading)', serif !important; }
-        .notion-page-content a, .potion-preview a { color: var(--potion-accent) !important; }
-        :is(.notion-page-content, \(pageTitle)) :is([style*="color: rgb(55, 53, 47)"], [style*="color: rgba(255, 255, 255, 0.81)"]) { color: var(--c-texPri) !important; }
-        .notion-code-block, .notion-code-block *, code, pre { font-family: ui-monospace, SFMono-Regular, monospace !important; }
-        ::selection { background: #\(c.accent)40; }
-        .potion-preview { font-size: \(t.fontSize)px; line-height: \(t.lineHeight); }
+        :root,
+        .notion-light-theme,
+        .notion-dark-theme,
+        .notion-app-inner {
+          --c-bacPri: #\(c.background) !important;
+          --c-bacSec: #\(c.surface) !important;
+          --c-bacTer: #\(c.surface) !important;
+          --c-bacEle: #\(c.background) !important;
+          --c-popBac: #\(c.background) !important;
+          --c-texPri: #\(c.text) !important;
+          --c-texSec: #\(c.text)B3 !important;
+          --c-texTer: #\(c.text)8C !important;
+          --c-icoPri: #\(c.text) !important;
+          --c-icoSec: #\(c.text)99 !important;
+          --c-borPri: #\(c.text)20 !important;
+          --c-borSec: #\(c.text)14 !important;
+          --c-bluTexAccPri: #\(c.accent) !important;
+          --ca-staHov: #\(c.accent)14 !important;
+        }
+        body,
+        .notion-app-inner {
+          background: #\(c.background) !important;
+          color: #\(c.text) !important;
+        }
+        \(pageTitle),
+        .potion-preview h1 {
+          --c-texPri: #\(c.title) !important;
+          color: #\(c.title);
+        }
+        \(headingBlocks),
+        .potion-preview h2,
+        .potion-preview h3 {
+          --c-texPri: #\(c.heading) !important;
+          color: #\(c.heading);
+        }
+        .notion-app-inner,
+        .notion-page-content,
+        .potion-preview {
+          font-family: '\(t.fonts.body)', sans-serif !important;
+        }
+        .notion-cursor-listener,
+        .notion-frame,
+        .notion-scroller.vertical,
+        .notion-topbar {
+          background-color: #\(c.background) !important;
+        }
+        .notion-page-content {
+          background-color: transparent !important;
+        }
+        .notion-sidebar-container,
+        .notion-sidebar {
+          background-color: #\(c.surface) !important;
+        }
+        .notion-sidebar-container .notion-scroller.vertical {
+          background-color: transparent !important;
+        }
+        .notion-page-content,
+        .notion-text-block [contenteditable],
+        .notion-bulleted_list-block [contenteditable],
+        .notion-numbered_list-block [contenteditable],
+        .notion-to_do-block [contenteditable] {
+          font-size: \(t.fontSize)px !important;
+          line-height: \(t.lineHeight) !important;
+        }
+        :is(\(pageTitle), \(headingBlocks)) [contenteditable],
+        .potion-preview h1,
+        .potion-preview h2,
+        .potion-preview h3 {
+          font-family: '\(t.fonts.heading)', serif !important;
+        }
+        .notion-page-content a,
+        .potion-preview a {
+          color: var(--potion-accent) !important;
+        }
+        :is(.notion-page-content, \(pageTitle))
+          :is([style*='color: rgb(55, 53, 47)'], [style*='color: rgba(255, 255, 255, 0.81)']) {
+          color: var(--c-texPri) !important;
+        }
+        .notion-code-block,
+        .notion-code-block *,
+        code,
+        pre {
+          font-family: ui-monospace, SFMono-Regular, monospace !important;
+        }
+        ::selection {
+          background: #\(c.accent)40;
+        }
+        .potion-preview {
+          font-size: \(t.fontSize)px;
+          line-height: \(t.lineHeight);
+        }
         """
     }
 
@@ -113,27 +168,60 @@ extension ThemeInjection {
     /// Potion's back, forward and tab row. The elements are tagged by `runtime`. The page and sidebar scroll
     /// without visible scroll bars; wide tables and code blocks keep theirs.
     private static let layoutCSS = """
-    .potion-sidebar-row { height: \(Int(headerHeight))px !important; padding-inline-start: \(Int(sidebarButtonX))px !important; }
-    .potion-page-column { padding-top: \(Int(headerHeight))px !important; }
-    .potion-below-header { top: \(Int(headerHeight))px !important; height: calc(100% - \(Int(headerHeight))px) !important; max-height: calc(100% - \(Int(headerHeight))px) !important; }
-    .notion-frame .notion-scroller.vertical, .notion-sidebar .notion-scroller.vertical { scrollbar-width: none !important; }
-    .notion-frame .notion-scroller.vertical::-webkit-scrollbar, .notion-sidebar .notion-scroller.vertical::-webkit-scrollbar { display: none !important; width: 0 !important; }
+    .potion-sidebar-row {
+      height: \(Int(headerHeight))px !important;
+      padding-inline-start: \(Int(sidebarButtonX))px !important;
+    }
+    .potion-page-column {
+      padding-top: \(Int(headerHeight))px !important;
+    }
+    .potion-below-header {
+      top: \(Int(headerHeight))px !important;
+      height: calc(100% - \(Int(headerHeight))px) !important;
+      max-height: calc(100% - \(Int(headerHeight))px) !important;
+    }
+    .notion-frame .notion-scroller.vertical,
+    .notion-sidebar .notion-scroller.vertical {
+      scrollbar-width: none !important;
+    }
+    .notion-frame .notion-scroller.vertical::-webkit-scrollbar,
+    .notion-sidebar .notion-scroller.vertical::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+    }
     """
 
     /// Installed on every page before its style. Defines `window.__potion.update`, which puts the theme, its fonts and
     /// the layout on the page as three style elements, and one observer that puts them back whenever Notion replaces
     /// the part of the page holding them. It also tags Notion's sidebar row and page column for `layoutCSS` and reports
     /// the sidebar's width (so Potion's tab row starts at its edge), the inbox's unread count (shown on Potion's own
-    /// inbox button while the sidebar is collapsed), and whether the page is dark (so Potion's header matches it). That runs at most once a frame, and only when something changes:
-    /// elements added or removed anywhere, the sidebar resizing (its collapse animates its width), and any change inside
-    /// the sidebar, including text such as the inbox badge. Text edits elsewhere, like typing in a page, don't wake it.
+    /// inbox button while the sidebar is collapsed), and Notion's appearance setting when it's Light or Dark (so
+    /// Potion's window matches the page). That runs at most once a frame, and only when something changes: elements added or removed anywhere, the sidebar
+    /// resizing (its collapse animates its width), and any change inside the sidebar, including text such as the inbox
+    /// badge. Text edits elsewhere, like typing in a page, don't wake it.
     static let runtime = """
     (() => {
-    \(themedPagesOnly)
+      // Only Notion's pages and the offline preview are styled.
+      const domains = \(jsLiteral(NavigationPolicy.notionDomains));
+      const onNotion =
+        location.protocol === 'https:' &&
+        domains.some(
+          domain => location.hostname === domain || location.hostname.endsWith('.' + domain),
+        );
+      if (!onNotion && location.protocol !== 'file:') return;
       if (window.__potion) return;
       const layoutCSS = \(jsLiteral(layoutCSS));
       const state = { css: '', fonts: '', dark: null, layout: false };
-    \(putStyle)
+      // Creates or updates one of Potion's style elements, leaving it alone when the CSS is unchanged.
+      const put = (id, css) => {
+        let node = document.getElementById(id);
+        if (!node) {
+          node = document.createElement('style');
+          node.id = id;
+          (document.head || document.documentElement).appendChild(node);
+        }
+        if (node.textContent !== css) node.textContent = css;
+      };
       const styleIDs = ['potion-fonts', 'potion-theme', 'potion-layout'];
       const render = () => {
         if (!document.documentElement) return;
@@ -142,23 +230,38 @@ extension ThemeInjection {
         put('potion-layout', state.layout ? layoutCSS : '');
         showMode();
       };
-      // Notion marks its light or dark mode with classes on the body and its app containers, following its own
-      // appearance setting. While a theme is on, the page shows the theme's mode instead, so Notion draws its settings,
-      // menus and controls for the theme's background. Turning the theme off goes back to Notion's own setting.
+      // Notion marks its light or dark mode with a class on its app container and overlays, following its own
+      // appearance setting, and adds `dark` to the body in dark mode. While a theme is on, the page shows the theme's
+      // mode instead, so Notion draws its settings, menus and controls for the theme's background. Turning the theme
+      // off goes back to Notion's own setting.
       const modeClasses = '.notion-dark-theme, .notion-light-theme';
-      const isNotionPage = () => document.body?.matches(modeClasses) ?? false;
+      const isNotionPage = () =>
+        document.querySelector('.notion-app-inner')?.matches(modeClasses) ?? false;
+      // Notion's appearance setting: 'light', 'dark', or anything else to follow the system.
+      const notionSetting = () => {
+        try {
+          return JSON.parse(localStorage.getItem('theme'))?.mode;
+        } catch {
+          return null;
+        }
+      };
       const notionDark = () => {
-        let mode;
-        try { mode = JSON.parse(localStorage.getItem('theme'))?.mode; } catch {}
-        return mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        const mode = notionSetting();
+        return (
+          mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        );
       };
       let themedMode = false;
       const showMode = () => {
         if (!isNotionPage() || (state.dark === null && !themedMode)) return;
         themedMode = state.dark !== null;
         const dark = state.dark ?? notionDark();
-        const [on, off] = dark ? ['notion-dark-theme', 'notion-light-theme'] : ['notion-light-theme', 'notion-dark-theme'];
-        if (!document.querySelector('.' + off) && document.body.classList.contains('dark') === dark) return;
+        const [on, off] = dark
+          ? ['notion-dark-theme', 'notion-light-theme']
+          : ['notion-light-theme', 'notion-dark-theme'];
+        if (!document.querySelector('.' + off) && document.body.classList.contains('dark') === dark) {
+          return;
+        }
         document.querySelectorAll('.' + off).forEach(node => node.classList.replace(off, on));
         document.body.classList.toggle('dark', dark);
       };
@@ -167,23 +270,49 @@ extension ThemeInjection {
         let row = sidebar && sidebar.querySelector('[role=button]');
         while (row && row !== sidebar) {
           const box = row.getBoundingClientRect();
-          if (row.children.length === 2 && getComputedStyle(row).display === 'flex' && box.height >= 32 && box.height <= 52) break;
+          if (
+            row.children.length === 2 &&
+            getComputedStyle(row).display === 'flex' &&
+            box.height >= 32 &&
+            box.height <= 52
+          ) {
+            break;
+          }
           row = row.parentElement;
         }
         if (row && row !== sidebar && !row.classList.contains('potion-sidebar-row')) {
-          document.querySelectorAll('.potion-sidebar-row').forEach(node => node.classList.remove('potion-sidebar-row'));
+          document
+            .querySelectorAll('.potion-sidebar-row')
+            .forEach(node => node.classList.remove('potion-sidebar-row'));
           row.classList.add('potion-sidebar-row');
         }
         const column = document.querySelector('.notion-frame')?.parentElement;
-        if (column && column.querySelector('.notion-topbar') && !column.classList.contains('potion-page-column')) column.classList.add('potion-page-column');
+        if (
+          column &&
+          column.querySelector('.notion-topbar') &&
+          !column.classList.contains('potion-page-column')
+        ) {
+          column.classList.add('potion-page-column');
+        }
         // Panels Notion pins to the top of the window beside the page (inbox, side peek) move below the tab row too.
         // Full-window layers, such as menus and dialogs, stay put.
         const panels = (element, depth) => {
           for (const child of element.children) {
-            if (child.classList.contains('potion-page-column') || child.classList.contains('notion-sidebar-container')) continue;
+            if (
+              child.classList.contains('potion-page-column') ||
+              child.classList.contains('notion-sidebar-container')
+            ) {
+              continue;
+            }
             if (getComputedStyle(child).position === 'fixed') {
               const box = child.getBoundingClientRect();
-              if (box.top < \(Int(headerHeight)) && box.height > 100 && box.width < window.innerWidth - 1) child.classList.add('potion-below-header');
+              if (
+                box.top < \(Int(headerHeight)) &&
+                box.height > 100 &&
+                box.width < window.innerWidth - 1
+              ) {
+                child.classList.add('potion-below-header');
+              }
             } else if (depth < 3) panels(child, depth + 1);
           }
         };
@@ -200,7 +329,15 @@ extension ThemeInjection {
       let last = '';
       let observed = null;
       let scheduled = false;
-      const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; refresh(); }); } };
+      const schedule = () => {
+        if (!scheduled) {
+          scheduled = true;
+          requestAnimationFrame(() => {
+            scheduled = false;
+            refresh();
+          });
+        }
+      };
       const resize = new ResizeObserver(schedule);
       const sidebarChanges = new MutationObserver(schedule);
       const refresh = () => {
@@ -213,27 +350,55 @@ extension ThemeInjection {
           sidebarChanges.disconnect();
           if (container) {
             resize.observe(container);
-            sidebarChanges.observe(container, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style'] });
+            sidebarChanges.observe(container, {
+              subtree: true,
+              childList: true,
+              characterData: true,
+              attributes: true,
+              attributeFilter: ['class', 'style'],
+            });
           }
           observed = container;
         }
         let width = 0;
         if (container) {
           const box = container.getBoundingClientRect();
-          if (box.left <= 1 && box.width > 40 && getComputedStyle(container).visibility !== 'hidden') width = Math.round(box.right);
+          if (box.left <= 1 && box.width > 40 && getComputedStyle(container).visibility !== 'hidden') {
+            width = Math.round(box.right);
+          }
         }
-        const message = { sidebarWidth: width, inboxCount: inboxCount(), dark: isNotionPage() ? document.body.classList.contains('notion-dark-theme') : null };
+        const setting = notionSetting();
+        const message = {
+          sidebarWidth: width,
+          inboxCount: inboxCount(),
+          notionAppearance:
+            isNotionPage() && (setting === 'light' || setting === 'dark') ? setting : null,
+        };
         const key = JSON.stringify(message);
-        if (handler && key !== last) { last = key; handler.postMessage(message); }
+        if (handler && key !== last) {
+          last = key;
+          handler.postMessage(message);
+        }
       };
-      window.__potion = { update(next) { Object.assign(state, next); render(); schedule(); } };
+      window.__potion = {
+        update(next) {
+          Object.assign(state, next);
+          render();
+          schedule();
+        },
+      };
       window.addEventListener('resize', schedule);
       new MutationObserver(() => {
         if (styleIDs.some(id => !document.getElementById(id))) render();
         schedule();
       }).observe(document.documentElement, { childList: true, subtree: true });
-      // Notion changes the body's mode classes when its appearance setting changes.
-      if (document.body) new MutationObserver(() => { showMode(); schedule(); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      // Notion changes the body's classes when its appearance setting changes.
+      if (document.body) {
+        new MutationObserver(() => {
+          showMode();
+          schedule();
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      }
       render();
       refresh();
     })();
@@ -248,7 +413,15 @@ extension ThemeInjection {
     /// Sends Notion the same key event as its ⌘\ shortcut, which shows or hides its sidebar.
     static let toggleSidebarScript = """
     (() => {
-      const event = { key: '\\\\', code: 'Backslash', keyCode: 220, which: 220, metaKey: true, bubbles: true, cancelable: true };
+      const event = {
+        key: '\\\\',
+        code: 'Backslash',
+        keyCode: 220,
+        which: 220,
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      };
       (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', event));
       (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keyup', event));
     })();
