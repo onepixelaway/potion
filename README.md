@@ -6,6 +6,12 @@ Potion is independent and not affiliated with Notion.
 
 ![Potion with the Paper theme and two tabs](Screenshots/workspace.png)
 
+## Download
+
+**[Download Potion for Mac](https://github.com/onepixelaway/potion/releases/latest/download/Potion.dmg)** (macOS 15 or later, Apple silicon and Intel)
+
+Open the disk image and drag Potion into Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click.
+
 ## What you can do
 
 - **Sign in on Notion's own page.** Google, Apple and Microsoft sign-in popups open as a sheet over the window. Later launches reopen your tabs.
@@ -38,7 +44,7 @@ Potion's shortcuts stay clear of Notion's own (⌘E, ⌘N, ⌘⌥1–9 and so on
 
 Each tab is a WKWebView showing Notion's web app. A theme is CSS injected into Notion's pages, along with the theme's two font families embedded from the app bundle, so pages make no font requests. A small page script puts the styles back when Notion replaces the page. It also moves Notion's sidebar row into the title bar, and reports the sidebar's width, the inbox count and Notion's own Light or Dark setting so the window matches the page.
 
-Notion and its identity providers render their own sign-in forms, and Potion never reads credentials or exports cookies. The web view identifies as Safari so Google allows sign-in. Themes are injected only into Notion's pages and the offline preview, never into Notion's login page or identity providers, and theme colors and font names are validated before any CSS is generated. Links to other sites open in your default browser, while redirects during sign-in, including enterprise SSO, stay in the window. Preferences are saved in UserDefaults under `com.potion.mac`.
+Notion and its identity providers render their own sign-in forms, and Potion never reads credentials or exports cookies. The web view identifies as Safari so Google allows sign-in. Themes are injected only into Notion's pages and the offline preview, never into Notion's login page or identity providers, and theme colors and font names are validated before any CSS is generated. Links to other sites open in your default browser, while redirects during sign-in, including enterprise SSO, stay in the window. Preferences are saved in UserDefaults under `com.tareqistyping.potion`.
 
 | Path | What it holds |
 | --- | --- |
@@ -72,6 +78,8 @@ open build/Build/Products/Debug/Potion.app
 ```
 
 `build.sh` first regenerates the Xcode project from `project.yml` with XcodeGen (`brew install xcodegen`). Run `xcodegen generate` yourself after changing `project.yml`.
+
+A build from source has the same bundle identifier as the downloaded app, so the two share preferences, saved themes and your Notion sign-in. Change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` to keep them apart.
 
 ## Test
 

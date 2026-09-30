@@ -1,6 +1,6 @@
 name: Potion
 options:
-  bundleIdPrefix: com.potion
+  bundleIdPrefix: com.tareqistyping
   deploymentTarget:
     macOS: '15.0'
 settings:
@@ -17,7 +17,7 @@ targets:
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.potion.mac
+        PRODUCT_BUNDLE_IDENTIFIER: com.tareqistyping.potion
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Potion
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity

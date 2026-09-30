@@ -544,7 +544,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.potion.PotionTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tareqistyping.PotionTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Potion.app/Contents/MacOS/Potion";
 			};
@@ -688,7 +688,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.potion.mac;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tareqistyping.potion;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -710,7 +710,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.potion.mac;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tareqistyping.potion;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -726,7 +726,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.potion.PotionTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tareqistyping.PotionTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Potion.app/Contents/MacOS/Potion";
 			};
