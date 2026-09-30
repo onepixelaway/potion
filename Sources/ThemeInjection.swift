@@ -29,9 +29,16 @@ enum ThemeInjection {
     private static let pageTitle = ".notion-page-block:not(.notion-page-content *, .notion-sidebar *)"
     private static let headingBlocks = ".notion-header-block, .notion-sub_header-block, .notion-sub_sub_header-block"
 
-    static func css(for input: PotionTheme) -> String {
+    static func css(for input: PotionTheme, changesSidebarFont: Bool) -> String {
         let t = input.validated
         let c = t.colors
+        // The sidebar inherits the body font from Notion's app container, unless it keeps Notion's own font, which
+        // `runtime` reads from that container.
+        let sidebarFont = changesSidebarFont ? "" : """
+        .notion-sidebar-container {
+          font-family: var(--potion-notion-font, ui-sans-serif, -apple-system, sans-serif) !important;
+        }
+        """
         // Page colors are written out rather than read from variables, and only the page's outer layers paint them:
         // the text column stays transparent, so it can never show a different shade than the page around it.
         // Fonts match text whether or not it's editable, since Notion makes trashed and shared pages read-only.
@@ -85,6 +92,7 @@ enum ThemeInjection {
         .potion-preview {
           font-family: '\(t.fonts.body)', sans-serif !important;
         }
+        \(sidebarFont)
         .notion-cursor-listener,
         .notion-frame,
         .notion-scroller.vertical,
@@ -143,6 +151,7 @@ enum ThemeInjection {
     struct PageStyle: Equatable {
         var theme: PotionTheme?
         var layout = false
+        var changesSidebarFont = false
         var fonts: ThemeFonts? { theme?.fonts }
     }
 
@@ -150,7 +159,7 @@ enum ThemeInjection {
     @MainActor static func update(_ style: PageStyle, withFonts: Bool) -> String {
         let fonts = withFonts ? ", fonts: \(fontsLiteral(style.fonts))" : ""
         let dark = style.theme.map { "\($0.isDark)" } ?? "null"
-        return "window.__potion?.update({ css: \(jsLiteral(style.theme.map(css(for:)) ?? "")), dark: \(dark), layout: \(style.layout)\(fonts) });"
+        return "window.__potion?.update({ css: \(jsLiteral(style.theme.map { css(for: $0, changesSidebarFont: style.changesSidebarFont) } ?? "")), dark: \(dark), layout: \(style.layout)\(fonts) });"
     }
 }
 
@@ -193,12 +202,13 @@ extension ThemeInjection {
 
     /// Installed on every page before its style. Defines `window.__potion.update`, which puts the theme, its fonts and
     /// the layout on the page as three style elements, and one observer that puts them back whenever Notion replaces
-    /// the part of the page holding them. It also tags Notion's sidebar row and page column for `layoutCSS` and reports
-    /// the sidebar's width (so Potion's tab row starts at its edge), the inbox's unread count (shown on Potion's own
-    /// inbox button while the sidebar is collapsed), and Notion's appearance setting when it's Light or Dark (so
-    /// Potion's window matches the page). That runs at most once a frame, and only when something changes: elements added or removed anywhere, the sidebar
-    /// resizing (its collapse animates its width), and any change inside the sidebar, including text such as the inbox
-    /// badge. Text edits elsewhere, like typing in a page, don't wake it.
+    /// the part of the page holding them and keeps Notion's own font at hand for the sidebar. It also tags Notion's
+    /// sidebar row and page column for `layoutCSS` and reports the sidebar's width (so Potion's tab row starts at its
+    /// edge), the inbox's unread count (shown on Potion's own inbox button while the sidebar is collapsed), and
+    /// Notion's appearance setting when it's Light or Dark (so Potion's window matches the page). That runs at most
+    /// once a frame, and only when something changes: elements added or removed anywhere, the sidebar resizing (its
+    /// collapse animates its width), and any change inside the sidebar, including text such as the inbox badge. Text
+    /// edits elsewhere, like typing in a page, don't wake it.
     static let runtime = """
     (() => {
       // Only Notion's pages and the offline preview are styled.
@@ -223,8 +233,20 @@ extension ThemeInjection {
         if (node.textContent !== css) node.textContent = css;
       };
       const styleIDs = ['potion-fonts', 'potion-theme', 'potion-layout'];
+      // Notion sets its own font on its app container, where a theme's body font overrides it. Kept as a variable, so
+      // the sidebar can keep Notion's font under a theme. Like the style elements, it's checked on every change rather
+      // than once a frame, since tabs in the background don't draw frames.
+      let notionFont = '';
+      const keepNotionFont = () => {
+        const font = document.querySelector('.notion-app-inner')?.style.fontFamily;
+        if (font && font !== notionFont) {
+          notionFont = font;
+          document.documentElement.style.setProperty('--potion-notion-font', font);
+        }
+      };
       const render = () => {
         if (!document.documentElement) return;
+        keepNotionFont();
         put('potion-fonts', state.fonts);
         put('potion-theme', state.css);
         put('potion-layout', state.layout ? layoutCSS : '');
@@ -390,6 +412,7 @@ extension ThemeInjection {
       window.addEventListener('resize', schedule);
       new MutationObserver(() => {
         if (styleIDs.some(id => !document.getElementById(id))) render();
+        else keepNotionFont();
         schedule();
       }).observe(document.documentElement, { childList: true, subtree: true });
       // Notion changes the body's classes when its appearance setting changes.

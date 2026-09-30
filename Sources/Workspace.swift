@@ -49,6 +49,11 @@ struct AuthPopup: Identifiable {
         get { style.layout }
         set { style.layout = newValue }
     }
+    /// Gives Notion's sidebar the theme's body font too. Off, the sidebar keeps Notion's own font.
+    var changesSidebarFont: Bool {
+        get { style.changesSidebarFont }
+        set { style.changesSidebarFont = newValue }
+    }
     /// The current workspace page, which the window saves so its tabs reopen on relaunch.
     @ObservationIgnored private(set) var pageURL: URL? { didSet { onPageChange?() } }
     /// Called after `pageURL` changes. Set by the window hosting this workspace.

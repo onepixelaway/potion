@@ -127,6 +127,8 @@ private struct SettingsView: View {
                 Picker("Theme", selection: $store.activeID) {
                     ForEach(store.choices) { theme in Text(theme.name).tag(theme.id) }
                 }
+                Toggle("Change sidebar font", isOn: $store.changesSidebarFont)
+                    .disabled(!store.enabled)
             } header: {
                 Text("Appearance")
             } footer: {

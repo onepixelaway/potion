@@ -147,6 +147,13 @@ final class PotionTests: XCTestCase {
         XCTAssertTrue(store.enabled)
         XCTAssertEqual(store.selected.name, "Midnight")
     }
+    @MainActor func testSidebarFontIsOffByDefaultAndSaved() {
+        let defaults = makeDefaults()
+        let store = ThemeStore(defaults: defaults)
+        XCTAssertFalse(store.changesSidebarFont, "The sidebar keeps Notion's font unless asked")
+        store.changesSidebarFont = true
+        XCTAssertTrue(ThemeStore(defaults: defaults).changesSidebarFont)
+    }
     @MainActor func testSaveEditDeleteAndRestoreTheme() {
         let defaults = makeDefaults()
         let store = ThemeStore(defaults: defaults)
@@ -340,6 +347,27 @@ final class PotionTests: XCTestCase {
         workspace.apply(nil)
         let restored = try await mode()
         XCTAssertEqual(restored, "notion-app-inner notion-light-theme,false", "Notion's own look goes back to Light")
+    }
+    @MainActor func testSidebarKeepsNotionsFontUnlessChanged() async throws {
+        let workspace = Workspace()
+        workspace.apply(preset("paper"))
+        await loadPreview(workspace)
+        func font(_ id: String) async throws -> String? {
+            try await js("getComputedStyle(document.getElementById('\(id)')).fontFamily", in: workspace) as? String
+        }
+        // Notion sets its font on its app container.
+        _ = try await js("""
+          document.body.insertAdjacentHTML('beforeend', `<div class="notion-app-inner" style="font-family: Georgia, serif">
+            <div class="notion-sidebar-container"><div class="notion-sidebar"><div id="sidebar-item">Pages</div></div></div>
+            <div class="notion-frame"><div id="page-item">Page</div></div></div>`);
+        """, in: workspace)
+        let sidebar = try await font("sidebar-item")
+        let page = try await font("page-item")
+        XCTAssertEqual(sidebar, "Georgia, serif", "The sidebar keeps Notion's own font")
+        XCTAssertTrue(page?.hasPrefix("\"DM Sans\"") == true, "The rest of Notion takes the theme's body font")
+        workspace.changesSidebarFont = true
+        let changed = try await font("sidebar-item")
+        XCTAssertTrue(changed?.hasPrefix("\"DM Sans\"") == true, "Changing the sidebar font gives it the theme's body font")
     }
     @MainActor func testFontsLoadOnlyWhileThemed() async throws {
         let workspace = Workspace()

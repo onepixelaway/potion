@@ -16,7 +16,7 @@ Open the disk image and drag Potion into Applications. The app is signed with a 
 
 - **Sign in on Notion's own page.** Google, Apple and Microsoft sign-in popups open as a sheet over the window. Later launches reopen your tabs.
 - **Work in tabs, laid out like Notion's Mac app.** Notion's sidebar row sits beside the traffic lights, followed by back and forward, your tabs, and reload, open in browser and Appearance. ⌘-click a Notion link to open it in a background tab.
-- **Pick a theme** from the Appearance panel: Notion Default plus 24 themes, 14 light and 10 dark. Body text keeps at least 7:1 contrast with the page and sidebar, and titles, headings and links at least 4.5:1.
+- **Pick a theme** from the Appearance panel: Notion Default plus 24 themes, 14 light and 10 dark. Body text keeps at least 7:1 contrast with the page and sidebar, and titles, headings and links at least 4.5:1. The sidebar keeps Notion's own font unless you turn on **Change sidebar font**.
 - **Make your own.** A theme is a color set and a font pairing, and any pairing goes with any palette. The pencil beside each menu opens its individual settings: page and sidebar colors, title, heading, text and link colors, heading and body fonts, text size and line spacing. Edits preview live; Save keeps them in My Themes.
 - **Sign out** from the Potion menu or Settings (⌘,). This clears Notion's cookies and website data from Potion.
 
@@ -42,7 +42,7 @@ Potion's shortcuts stay clear of Notion's own (⌘E, ⌘N, ⌘⌥1–9 and so on
 
 ## How it works
 
-Each tab is a WKWebView showing Notion's web app. A theme is CSS injected into Notion's pages, along with the theme's two font families embedded from the app bundle, so pages make no font requests. A small page script puts the styles back when Notion replaces the page. It also moves Notion's sidebar row into the title bar, and reports the sidebar's width, the inbox count and Notion's own Light or Dark setting so the window matches the page.
+Each tab is a WKWebView showing Notion's web app. A theme is CSS injected into Notion's pages, along with the theme's two font families embedded from the app bundle, so pages make no font requests. A small page script puts the styles back when Notion replaces the page, and keeps Notion's own font for the sidebar. It also moves Notion's sidebar row into the title bar, and reports the sidebar's width, the inbox count and Notion's own Light or Dark setting so the window matches the page.
 
 Notion and its identity providers render their own sign-in forms, and Potion never reads credentials or exports cookies. The web view identifies as Safari so Google allows sign-in. Themes are injected only into Notion's pages and the offline preview, never into Notion's login page or identity providers, and theme colors and font names are validated before any CSS is generated. Links to other sites open in your default browser, while redirects during sign-in, including enterprise SSO, stay in the window. Preferences are saved in UserDefaults under `com.tareqistyping.potion`.
 

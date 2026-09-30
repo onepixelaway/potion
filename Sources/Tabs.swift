@@ -16,6 +16,8 @@ extension FocusedValues {
     @Published private(set) var theme: PotionTheme?
     /// Notion's Mac-app layout, on once the person is in their workspace.
     var usesWindowLayout = false { didSet { tabs.forEach { $0.usesWindowLayout = usesWindowLayout } } }
+    /// Whether the theme's body font reaches Notion's sidebar too.
+    var changesSidebarFont = false { didSet { tabs.forEach { $0.changesSidebarFont = changesSidebarFont } } }
     /// The last snapshot this window saved, so unchanged tabs don't overwrite another window's.
     private var savedSnapshot: Data?
 
@@ -86,6 +88,7 @@ extension FocusedValues {
         tab.onOpenTab = { [weak self] url in self?.newTab(url, select: false) }
         tab.apply(theme)
         tab.usesWindowLayout = usesWindowLayout
+        tab.changesSidebarFont = changesSidebarFont
         tab.onPageChange = { [weak self] in self?.persist() }
     }
     private func persist() {

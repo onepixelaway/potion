@@ -28,6 +28,7 @@ struct RootView: View {
                 if flow.isOnboarding { tabs.current.openLogin() } else { tabs.restore() }
             }
             .onChange(of: theme, initial: true) { _, theme in tabs.apply(theme) }
+            .onChange(of: store.changesSidebarFont, initial: true) { _, changes in tabs.changesSidebarFont = changes }
             .onChange(of: flow.stage, initial: true) { old, stage in
                 tabs.usesWindowLayout = stage == .ready
                 switch (old, stage) {

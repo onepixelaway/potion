@@ -267,6 +267,14 @@ private struct AppearancePanel: View {
                 } else {
                     Text("Appearance").font(.title2.bold())
                 }
+                Toggle(isOn: $store.changesSidebarFont) {
+                    Text("Change sidebar font").frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(!store.enabled)
+                .help("Use the theme’s body font in Notion’s sidebar too")
+                .padding(.top, 16)
                 ForEach(Array(PotionTheme.appearanceGroups.enumerated()), id: \.offset) { index, group in
                     Text(group.title).font(.headline).padding(.top, index == 0 ? 20 : 28)
                     // Notion Default leads the light themes.
